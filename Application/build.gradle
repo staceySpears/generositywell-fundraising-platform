@@ -1,16 +1,10 @@
 plugins {
-    id 'ata-curriculum.snippets-conventions'
     id 'org.springframework.boot' version '3.2.5'
     id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'com.kenzie.unit.four'
 version = '0.0.1-SNAPSHOT'
-
-checkstyle {
-    def suppressionFile = rootProject.file('Utilities/ATACheckstyle/configuration/checkstyle/unit3/suppressions.xml')
-    configProperties.put('checkstyle.suppression.filter', suppressionFile)
-}
 
 dependencies {
     implementation project(":ServiceLambdaModel")
