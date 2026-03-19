@@ -118,6 +118,3 @@ task runMain(type: JavaExec) {
   standardInput = System.in
 }
 
-dependencies {
-  implementation project(':Utilities')
-}
