@@ -1,40 +1,43 @@
 package com.kenzie.appserver.repositories.model;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.kenzie.appserver.service.model.User;
+import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
+import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
+import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class UserTypeConverter implements DynamoDBTypeConverter<String, User> {
+public class UserTypeConverter implements AttributeConverter<User> {
 
     @Override
-    public String convert(User object) {
-        User user = (User) object;
-        String users = null;
-        try {
-            if (user != null) {
-                users = String.format("%s x %s x %s", user.getId(), user.getName(),
-                        user.getEmail());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public AttributeValue transformFrom(User input) {
+        if (input == null) {
+            return AttributeValue.builder().nul(true).build();
         }
-        return users;
+        String value = String.format("%s x %s x %s",
+                input.getId(), input.getName(), input.getEmail());
+        return AttributeValue.builder().s(value).build();
     }
 
     @Override
-    public User unconvert(String s) {
-
+    public User transformTo(AttributeValue input) {
         User user = new User();
-        try {
-            if (s != null && s.length() != 0) {
-                String[] data = s.split("x");
-                user.setId(data[0].trim());
-                user.setName(data[1].trim());
-                user.setEmail(data[2].trim());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        String s = input.s();
+        if (s != null && s.length() != 0) {
+            String[] data = s.split("x");
+            user.setId(data[0].trim());
+            user.setName(data[1].trim());
+            user.setEmail(data[2].trim());
         }
         return user;
     }
-}
 
+    @Override
+    public EnhancedType<User> type() {
+        return EnhancedType.of(User.class);
+    }
+
+    @Override
+    public AttributeValueType attributeValueType() {
+        return AttributeValueType.S;
+    }
+}
