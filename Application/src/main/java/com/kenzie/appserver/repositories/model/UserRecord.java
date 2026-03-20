@@ -1,13 +1,9 @@
 package com.kenzie.appserver.repositories.model;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.kenzie.appserver.service.model.User;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
-import java.util.List;
-
-@DynamoDBTable(tableName = "users")
+@DynamoDbBean
 public class UserRecord {
     private String id;
     private String name;
@@ -20,8 +16,7 @@ public class UserRecord {
         this.email = email;
     }
 
-
-    @DynamoDBHashKey(attributeName = "id")
+    @DynamoDbPartitionKey
     public String getId() {
         return id;
     }
@@ -29,7 +24,6 @@ public class UserRecord {
         this.id = id;
     }
 
-    @DynamoDBAttribute(attributeName = "name")
     public String getName() {
         return name;
     }
@@ -37,7 +31,6 @@ public class UserRecord {
         this.name = name;
     }
 
-    @DynamoDBAttribute(attributeName = "email")
     public String getEmail() {
         return email;
     }
