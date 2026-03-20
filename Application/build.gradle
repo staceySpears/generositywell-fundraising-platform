@@ -14,29 +14,27 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
 
-    implementation 'com.github.derjust:spring-data-dynamodb:5.1.0'
     implementation 'com.google.guava:guava:31.1-jre'
     implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: '2.9.3'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache'
-    
 
     implementation group: 'io.micrometer', name: 'micrometer-core', version: '1.8.3'
     implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: '1.8.3'
     implementation group: 'io.micrometer', name: 'micrometer-registry-cloudwatch2', version: '1.8.3'
 
-    implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-actuator', version: '2.2.6.RELEASE'
-    implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-aws', version: '2.2.6.RELEASE'
-    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui:2.3.0'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.1.1'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    
+    implementation 'software.amazon.awssdk:dynamodb-enhanced'
+    implementation 'software.amazon.awssdk:dynamodb'
 
-    runtimeOnly group: 'software.amazon.awssdk', name: 'bom', version: '2.17.131', ext: 'pom'
-    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j18-impl:2.17.0'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testImplementation group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
     testImplementation group: 'org.testcontainers', name: 'testcontainers', version: '1.16.3'
-
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     testImplementation 'net.andreinc:mockneat:0.4.8'
+}
+dependencyManagement {
+    imports {
+        mavenBom 'software.amazon.awssdk:bom:2.25.23'
+    }
 }
 
 processResources {
@@ -70,7 +68,9 @@ task copyFrontend(type: Copy) {
     into("build/resources/main/static")
 }
 
-compileJava.dependsOn(copyFrontend)
+if (project.hasProperty('includeFrontend')) {
+    compileJava.dependsOn(copyFrontend)
+}
 
 task bootRunDev {
     bootRun.configure {
