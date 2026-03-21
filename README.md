@@ -1,5 +1,3 @@
-# ATA-Capstone-Project
-
 # GenerosityWell
 
 ## Overview
@@ -7,6 +5,33 @@
 GenerosityWell is a nonprofit fundraising and event management platform designed to connect donors, organizers, and communities through structured campaigns and events.
 
 This project is a full-stack refactor of an original academic capstone, evolving it from a tightly coupled proof-of-concept into a cloud-hosted, service-oriented architecture leveraging AWS managed services. The primary goal is establishing a production-ready backend system with clear separation of concerns, containerized local development, and enterprise-grade observability.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Frontend\nHTML / JS] -->|REST| B[Application\nSpring Boot 3 · Java 21]
+
+    B -->|Caffeine\nin-memory cache| B
+    B -->|REST via\nLambdaServiceClient| C[ServiceLambda\nAWS Lambda]
+
+    C -->|Redis / Jedis\ncache| C
+    C -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
+
+    B -->|Metrics| E[Micrometer]
+    E --> F[Prometheus]
+    E --> G[AWS CloudWatch]
+
+    style A fill:#f5f5f5,stroke:#999
+    style B fill:#dbeafe,stroke:#3b82f6
+    style C fill:#dcfce7,stroke:#22c55e
+    style D fill:#fef9c3,stroke:#eab308
+    style E fill:#f3e8ff,stroke:#a855f7
+    style F fill:#f3e8ff,stroke:#a855f7
+    style G fill:#f3e8ff,stroke:#a855f7
+```
 
 ---
 
@@ -125,23 +150,22 @@ Run integration tests:
 
 ## Roadmap
 
-**Phase 1 — Architecture Stabilization (In Progress)**
+### Phase 1 — Architecture Stabilization (In Progress)
+
 - [x] Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2
 - [x] Established multi-module Gradle structure
 - [x] Validated Docker-based local dev infrastructure (Redis via `runLocalRedis.sh`, DynamoDB via `local-dynamodb.sh`)
 - [ ] Complete repository layer migration to AWS SDK v2 Enhanced Client
 - [ ] Finalize standard DTOs and global exception handling
 
-**Phase 2 — Feature Completion**
+### Phase 2 — Feature Completion
+
 - [ ] Event lifecycle management (Create, Update, Cancel)
 - [ ] User authentication and authorization
 - [ ] Campaign and event linking
 
-**Phase 3 — Platform Enhancements**
+### Phase 3 — Platform Enhancements
+
 - [ ] Donation processing workflows
 - [ ] Event ticketing and registration
 - [ ] Automated notifications (Email/SMS)
-
-
-
-
