@@ -1,10 +1,10 @@
 package com.kenzie.capstone.service.dependency;
 
-
 import com.kenzie.capstone.service.dao.EventDao;
 import com.kenzie.capstone.service.util.DynamoDbClientProvider;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+
 import dagger.Module;
 import dagger.Provides;
 
@@ -13,24 +13,24 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
- * Provides DynamoDBMapper instance to DAO classes.
- */
+ * Provides AWS SDK v2 DynamoDbEnhancedClient and DAO instances via Dagger.
+     * Replaces the legacy SDK v1 DynamoDBMapper wiring.
+     */
 @Module
-public class DaoModule {
+    public class DaoModule {
 
     @Singleton
-    @Provides
-    @Named("DynamoDBMapper")
-    public DynamoDBMapper provideDynamoDBMapper() {
-        return new DynamoDBMapper(DynamoDbClientProvider.getDynamoDBClient());
-    }
+            @Provides
+            @Named("DynamoDbEnhancedClient")
+            public DynamoDbEnhancedClient provideDynamoDbEnhancedClient() {
+                        return DynamoDbClientProvider.getEnhancedClient();
+            }
 
     @Singleton
-    @Provides
-    @Named("EventDao")
-    @Inject
-    public EventDao provideEventDao(@Named("DynamoDBMapper") DynamoDBMapper mapper) {
-        return new EventDao(mapper);
+            @Provides
+            @Named("EventDao")
+            @Inject
+            public EventDao provideEventDao(@Named("DynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
+                        return new EventDao(enhancedClient);
+            }
     }
-
-}
