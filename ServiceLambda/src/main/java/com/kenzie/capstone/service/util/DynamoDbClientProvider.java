@@ -1,39 +1,47 @@
 package com.kenzie.capstone.service.util;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
- * Provides an {@code AmazonDynamoDB} client using default AWS credentials provider chain.
- */
+ * Provides AWS SDK v2 DynamoDB clients.
+     * Replaces the legacy SDK v1 AmazonDynamoDB / AmazonDynamoDBClientBuilder.
+     */
 public class DynamoDbClientProvider {
 
     /**
-     * Returns DynamoDB client using default region.
-     * @return AmazonDynamoDB
-     */
-    public static AmazonDynamoDB getDynamoDBClient() {
-        return getDynamoDBClient(Regions.US_EAST_1);
+     * Returns a DynamoDbClient (low-level) for US_EAST_1.
+         * @return DynamoDbClient
+         */
+    public static DynamoDbClient getDynamoDBClient() {
+                return getDynamoDBClient(Region.US_EAST_1);
     }
 
     /**
-     * Returns DynamoDB client using default region.
-     * @param region If present, will be used as the region for the DynamoDB client
-     * @return AmazonDynamoDB
-     */
-    public static AmazonDynamoDB getDynamoDBClient(Regions region) {
-        if (null == region) {
-            throw new IllegalArgumentException("region cannot be null");
-        }
+     * Returns a DynamoDbClient (low-level) for the given region.
+         * @param region AWS region
+         * @return DynamoDbClient
+         */
+    public static DynamoDbClient getDynamoDBClient(Region region) {
+                if (region == null) {
+                                throw new IllegalArgumentException("region cannot be null");
+                }
+                return DynamoDbClient.builder()
+                                    .region(region)
+                                    .credentialsProvider(DefaultCredentialsProvider.create())
+                                    .build();
+    }
 
-        return AmazonDynamoDBClientBuilder
-                .standard()
-                // this will use multiple providers to look for AWS credentials
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                // This should be the same region the CloudFormation stack with tables was deployed in
-                .withRegion(region)
-                .build();
+    /**
+     * Returns a DynamoDbEnhancedClient wrapping the low-level client.
+         * Used by the DAO layer with @DynamoDbBean annotated records.
+         * @return DynamoDbEnhancedClient
+         */
+    public static DynamoDbEnhancedClient getEnhancedClient() {
+                return DynamoDbEnhancedClient.builder()
+                                    .dynamoDbClient(getDynamoDBClient())
+                                    .build();
     }
 }
