@@ -42,7 +42,7 @@ The original implementation functioned as a foundational proof-of-concept. This 
 - - **Service Boundaries:** Multi-module Gradle project strictly enforcing separation between the API layer, shared client libraries, serverless functions, and the frontend.
   - - **Two-Tier Caching:** In-memory Caffeine caching at the application layer and Redis via Jedis at the Lambda layer.
     - - **Production Observability:** Micrometer, Prometheus, and AWS CloudWatch integrated for metric export and application monitoring.
-      - - **Modern Frontend:** React SPA with client-side routing, a shared API service layer (Axios), and component-based UI — replacing the previous multi-HTML / per-page JS pattern.
+      - - **Modern Frontend:** React SPA with client-side routing, a shared API service layer (Axios), and component-based UI replacing the previous multi-HTML / per-page JS pattern.
        
         - ---
 
@@ -186,7 +186,9 @@ The original implementation functioned as a foundational proof-of-concept. This 
               >
               > ## Roadmap
               >
-              > ### Phase 1 — Architecture Stabilization ✅ In Progress
+              > ### Phase 1 — Architecture Stabilization
+              >
+              > **Status: In Progress**
               >
               > - [x] Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2
               > - [ ] - [x] Established multi-module Gradle structure
@@ -195,12 +197,16 @@ The original implementation functioned as a foundational proof-of-concept. This 
               > - [ ] - [ ] Complete repository layer migration to AWS SDK v2 Enhanced Client
               > - [ ] - [ ] Finalize standard DTOs and global exception handling
               >
+              > - [ ] ---
+              >
               > - [ ] ### Phase 2 — Feature Completion
               >
               > - [ ] - [ ] Event lifecycle management (Create, Update, Cancel)
               > - [ ] - [ ] User authentication and authorization (JWT / Spring Security)
               > - [ ] - [ ] Campaign and event linking
               > - [ ] - [ ] Frontend auth flow (login, register, protected routes)
+              >
+              > - [ ] ---
               >
               > - [ ] ### Phase 3 — Platform Enhancements
               >
@@ -209,6 +215,8 @@ The original implementation functioned as a foundational proof-of-concept. This 
               > - [ ] - [ ] Automated notifications (Email/SMS via AWS SES/SNS)
               > - [ ] - [ ] Donor dashboard with campaign progress tracking
               > - [ ] - [ ] Frontend campaign creation and management UI
+              >
+              > - [ ] ---
               >
               > - [ ] ### Phase 4 — Production Hardening
               >
