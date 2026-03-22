@@ -1,51 +1,83 @@
 package com.kenzie.capstone.service.dao;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
-import com.google.common.collect.ImmutableMap;
 import com.kenzie.capstone.service.model.EventRecord;
 
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * DAO for EventRecord persistence via AWS SDK v2 DynamoDB Enhanced Client.
+     * Replaces the legacy SDK v1 DynamoDBMapper implementation.
+     */
 public class EventDao {
-    private DynamoDBMapper mapper;
 
-    public EventDao(DynamoDBMapper mapper){this.mapper = mapper;}
+    private static final String TABLE_NAME = "Events";
 
+    private final DynamoDbTable<EventRecord> eventTable;
+
+    public EventDao(DynamoDbEnhancedClient enhancedClient) {
+                this.eventTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(EventRecord.class));
+    }
+
+    /**
+     * Retrieves all EventRecords matching the given partition key (id).
+         * @param id the event ID to query
+         * @return list of matching EventRecords
+         */
     public List<EventRecord> getEventById(String id) {
-        EventRecord eventRecord = new EventRecord();
-        eventRecord.setId(id);
+                Key key = Key.builder().partitionValue(id).build();
 
-        DynamoDBQueryExpression<EventRecord> queryExpression = new DynamoDBQueryExpression<EventRecord>()
-                .withHashKeyValues(eventRecord)
-                .withConsistentRead(false);
+            QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
+                                .queryConditional(QueryConditional.keyEqualTo(key))
+                                .consistentRead(false)
+                                .build();
 
-        return mapper.query(EventRecord.class, queryExpression);
+            return eventTable.query(queryRequest)
+                                .items()
+                                .stream()
+                                .collect(Collectors.toList());
     }
 
+    /**
+     * Persists a new EventRecord. Throws IllegalArgumentException if the id already exists.
+         * @param record the event to persist
+         * @return the persisted EventRecord
+         */
     public EventRecord postNewEvent(EventRecord record) {
-        try {
-            mapper.save(record, new DynamoDBSaveExpression()
-                    .withExpected(ImmutableMap.of(
-                            "id",
-                            new ExpectedAttributeValue().withExists(false)
-                    )));
-        } catch (ConditionalCheckFailedException e) {
-            throw new IllegalArgumentException("id already exists");
-        }
-
-        return record;
+                try {
+                                eventTable.putItem(
+                                                    PutItemEnhancedRequest.builder(EventRecord.class)
+                                                        .item(record)
+                                                        .conditionExpression(
+                                                                                    software.amazon.awssdk.enhanced.dynamodb.Expression.builder()
+                                                                                        .expression("attribute_not_exists(id)")
+                                                                                        .build()
+                                                                                )
+                                                        .build()
+                                                );
+                } catch (ConditionalCheckFailedException e) {
+                                throw new IllegalArgumentException("id already exists");
+                }
+                return record;
     }
 
-
+    /**
+     * Scans and returns all EventRecords in the table.
+         * @return list of all EventRecords
+         */
     public List<EventRecord> getAllEvents() {
-        DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
-                .withFilterExpression("attribute_not_exists(id)");
-
-        return mapper.scan(EventRecord.class, scanExpression);
+                return eventTable.scan()
+                                    .items()
+                                    .stream()
+                                    .collect(Collectors.toList());
     }
 }
