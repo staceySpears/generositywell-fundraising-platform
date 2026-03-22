@@ -64,150 +64,155 @@ The original implementation functioned as a foundational proof-of-concept. This 
 
         ### Stack
 
-        - **React 18** — component-based UI
-        - - **Vite** — replaces Webpack 4; fast dev server with HMR, optimized production builds
-          - - **React Router v6** — client-side routing (replaces 8 separate HTML files)
-            - - **Axios** — HTTP client consuming the Spring Boot REST API (updated from 0.21.x)
-              - - **CSS Modules** — scoped per-component styles (replaces 6 scattered global CSS files)
-               
-                - ### Pages / Routes
-               
-                - | Route | Component | Access |
-                - |---|---|---|
-                - | `/` | `LandingPage` | Public |
-                - | `/login` | `LoginPage` | Public |
-                - | `/register` | `RegisterPage` | Public |
-                - | `/forgot-password` | `ForgotPasswordPage` | Public |
-                - | `/search` | `SearchPage` | Public |
-                - | `/campaigns` | `CampaignsPage` | Public |
-                - | `/campaigns/:id` | `CampaignDetailPage` | Public |
-                - | `/dashboard` | `DashboardPage` | Authenticated |
-                - | `/events` | `EventsPage` | Authenticated |
-                - | `/calendar` | `CalendarPage` | Authenticated |
-               
-                - ### Local Development
-               
-                - ```bash
-                  cd Frontend
-                  npm install
-                  npm run dev
-                  ```
+        | Tool | Role |
+        |---|---|
+        | React 18 | Component-based UI |
+        | Vite | Replaces Webpack 4; fast dev server with HMR, optimized production builds |
+        | React Router v6 | Client-side routing (replaces 8 separate HTML files) |
+        | Axios | HTTP client consuming the Spring Boot REST API (updated from 0.21.x) |
+        | CSS Modules | Scoped per-component styles (replaces 6 scattered global CSS files) |
 
-                  The Vite dev server proxies `/api/*` to `http://localhost:5001`, matching the Spring Boot dev port.
+        ### Pages / Routes
 
-                  ### Build
+        | Route | Component | Access |
+        |---|---|---|
+        | `/` | `LandingPage` | Public |
+        | `/login` | `LoginPage` | Public |
+        | `/register` | `RegisterPage` | Public |
+        | `/forgot-password` | `ForgotPasswordPage` | Public |
+        | `/search` | `SearchPage` | Public |
+        | `/campaigns` | `CampaignsPage` | Public |
+        | `/campaigns/:id` | `CampaignDetailPage` | Public |
+        | `/dashboard` | `DashboardPage` | Authenticated |
+        | `/events` | `EventsPage` | Authenticated |
+        | `/calendar` | `CalendarPage` | Authenticated |
 
-                  ```bash
-                  npm run build
-                  ```
+        ### Local Development
 
-                  Output is written to `Frontend/dist/` and can be deployed to any static host (AWS S3 + CloudFront recommended).
+        ```bash
+        cd Frontend
+        npm install
+        npm run dev
+        ```
 
-                  ---
+        The Vite dev server proxies `/api/*` to `http://localhost:5001`, matching the Spring Boot dev port.
 
-                  ## Building & Running (Backend)
+        ### Build
 
-                  ### Local Development
+        ```bash
+        npm run build
+        ```
 
-                  For local development, the Application module runs against a Dockerized DynamoDB instance. The ServiceLambda module requires a deployed AWS environment and is not emulated locally.
+        Output is written to `Frontend/dist/` and can be deployed to any static host (AWS S3 + CloudFront recommended).
 
-                  **Prerequisites:**
-                  - Java 21
-                  - - Gradle 8.7+
-                    - - Docker Desktop (or equivalent container runtime)
-                     
-                      - **Step 1 — Start local infrastructure**
-                     
-                      - ```bash
-                        # Start Redis (redis-stack image) on port 6379
-                        ./runLocalRedis.sh
+        ---
 
-                        # Start local DynamoDB on port 8000
-                        ./local-dynamodb.sh
-                        ```
+        ## Building & Running (Backend)
 
-                        **Step 2 — Build and run the Spring Boot application**
+        ### Local Development
 
-                        ```bash
-                        ./gradlew :Application:bootRunDev
-                        ```
+        For local development, the Application module runs against a Dockerized DynamoDB instance. The ServiceLambda module requires a deployed AWS environment and is not emulated locally.
 
-                        **Step 3 — Explore the API**
+        **Prerequisites:**
+        - Java 21
+        - - Gradle 8.7+
+          - - Docker Desktop (or equivalent container runtime)
+           
+            - **Step 1 — Start local infrastructure**
+           
+            - ```bash
+              # Start Redis (redis-stack image) on port 6379
+              ./runLocalRedis.sh
 
-                        The OpenAPI UI is auto-generated and available at:
-                        `http://localhost:5001/swagger-ui.html`
+              # Start local DynamoDB on port 8000
+              ./local-dynamodb.sh
+              ```
 
-                        > Note: the production profile runs on port 5000.
-                        >
-                        > ### Building for Deployment
-                        >
-                        > Build the full project:
-                        >
-                        > ```bash
-                        > ./gradlew build
-                        > ```
-                        >
-                        > Build only the Lambda service artifact (produces `ServiceLambda.zip`):
-                        >
-                        > ```bash
-                        > ./gradlew :ServiceLambda:build
-                        > ```
-                        >
-                        > ### Deploying to AWS
-                        >
-                        > Before deploying, configure your environment variables:
-                        >
-                        > ```bash
-                        > source ./setupEnvironment.sh
-                        > ```
-                        >
-                        > Deploy the Lambda service stack to the development environment:
-                        >
-                        > ```bash
-                        > ./deployDev.sh
-                        > ```
-                        >
-                        > This script builds the ServiceLambda artifact, packages it via CloudFormation, and deploys it to AWS Lambda using the stack defined in `LambdaService-template.yml`. Requires AWS CLI configured with appropriate IAM permissions.
-                        >
-                        > ---
-                        >
-                        > ## Testing
-                        >
-                        > **Unit Tests:** Isolated service logic validation using JUnit and Mockito.
-                        >
-                        > **Integration Tests:** A custom `ApplicationContextInitializer` (`DynamoDbInitializer`) uses Testcontainers to spin up an ephemeral `amazon/dynamodb-local` container, dynamically injecting the mapped port into the Spring context before test startup. This ensures reliable cross-module API testing without requiring a live AWS environment.
-                        >
-                        > ```bash
-                        > ./gradlew :IntegrationTests:test
-                        > ```
-                        >
-                        > ---
-                        >
-                        > ## Roadmap
-                        >
-                        > ### Phase 1 — Architecture Stabilization ✅ In Progress
-                        > - [x] Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2
-                        > - [ ] - [x] Established multi-module Gradle structure
-                        > - [ ] - [x] Validated Docker-based local dev infrastructure (Redis, DynamoDB)
-                        > - [ ] - [x] Frontend migrated from Webpack 4 / vanilla JS to React + Vite
-                        > - [ ] - [ ] Complete repository layer migration to AWS SDK v2 Enhanced Client
-                        > - [ ] - [ ] Finalize standard DTOs and global exception handling
-                        >
-                        > - [ ] ### Phase 2 — Feature Completion
-                        > - [ ] - [ ] Event lifecycle management (Create, Update, Cancel)
-                        > - [ ] - [ ] User authentication and authorization (JWT / Spring Security)
-                        > - [ ] - [ ] Campaign and event linking
-                        > - [ ] - [ ] Frontend auth flow (login, register, protected routes)
-                        >
-                        > - [ ] ### Phase 3 — Platform Enhancements
-                        > - [ ] - [ ] Donation processing workflows
-                        > - [ ] - [ ] Event ticketing and registration
-                        > - [ ] - [ ] Automated notifications (Email/SMS via AWS SES/SNS)
-                        > - [ ] - [ ] Donor dashboard with campaign progress tracking
-                        > - [ ] - [ ] Frontend campaign creation and management UI
-                        >
-                        > - [ ] ### Phase 4 — Production Hardening
-                        > - [ ] - [ ] CI/CD pipeline (GitHub Actions → AWS CodePipeline)
-                        > - [ ] - [ ] Frontend deployment to S3 + CloudFront
-                        > - [ ] - [ ] End-to-end test coverage (Playwright or Cypress)
-                        > - [ ] - [ ] Rate limiting and API gateway integration
+              **Step 2 — Build and run the Spring Boot application**
+
+              ```bash
+              ./gradlew :Application:bootRunDev
+              ```
+
+              **Step 3 — Explore the API**
+
+              The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagger-ui.html`
+
+              > Note: the production profile runs on port 5000.
+              >
+              > ### Building for Deployment
+              >
+              > Build the full project:
+              >
+              > ```bash
+              > ./gradlew build
+              > ```
+              >
+              > Build only the Lambda service artifact (produces `ServiceLambda.zip`):
+              >
+              > ```bash
+              > ./gradlew :ServiceLambda:build
+              > ```
+              >
+              > ### Deploying to AWS
+              >
+              > Before deploying, configure your environment variables:
+              >
+              > ```bash
+              > source ./setupEnvironment.sh
+              > ```
+              >
+              > Deploy the Lambda service stack to the development environment:
+              >
+              > ```bash
+              > ./deployDev.sh
+              > ```
+              >
+              > This script builds the ServiceLambda artifact, packages it via CloudFormation, and deploys it to AWS Lambda using the stack defined in `LambdaService-template.yml`. Requires AWS CLI configured with appropriate IAM permissions.
+              >
+              > ---
+              >
+              > ## Testing
+              >
+              > **Unit Tests:** Isolated service logic validation using JUnit and Mockito.
+              >
+              > **Integration Tests:** A custom `ApplicationContextInitializer` (`DynamoDbInitializer`) uses Testcontainers to spin up an ephemeral `amazon/dynamodb-local` container, dynamically injecting the mapped port into the Spring context before test startup. This ensures reliable cross-module API testing without requiring a live AWS environment.
+              >
+              > ```bash
+              > ./gradlew :IntegrationTests:test
+              > ```
+              >
+              > ---
+              >
+              > ## Roadmap
+              >
+              > ### Phase 1 — Architecture Stabilization ✅ In Progress
+              >
+              > - [x] Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2
+              > - [ ] - [x] Established multi-module Gradle structure
+              > - [ ] - [x] Validated Docker-based local dev infrastructure (Redis, DynamoDB)
+              > - [ ] - [x] Frontend migrated from Webpack 4 / vanilla JS to React + Vite
+              > - [ ] - [ ] Complete repository layer migration to AWS SDK v2 Enhanced Client
+              > - [ ] - [ ] Finalize standard DTOs and global exception handling
+              >
+              > - [ ] ### Phase 2 — Feature Completion
+              >
+              > - [ ] - [ ] Event lifecycle management (Create, Update, Cancel)
+              > - [ ] - [ ] User authentication and authorization (JWT / Spring Security)
+              > - [ ] - [ ] Campaign and event linking
+              > - [ ] - [ ] Frontend auth flow (login, register, protected routes)
+              >
+              > - [ ] ### Phase 3 — Platform Enhancements
+              >
+              > - [ ] - [ ] Donation processing workflows
+              > - [ ] - [ ] Event ticketing and registration
+              > - [ ] - [ ] Automated notifications (Email/SMS via AWS SES/SNS)
+              > - [ ] - [ ] Donor dashboard with campaign progress tracking
+              > - [ ] - [ ] Frontend campaign creation and management UI
+              >
+              > - [ ] ### Phase 4 — Production Hardening
+              >
+              > - [ ] - [ ] CI/CD pipeline (GitHub Actions → AWS CodePipeline)
+              > - [ ] - [ ] Frontend deployment to S3 + CloudFront
+              > - [ ] - [ ] End-to-end test coverage (Playwright or Cypress)
+              > - [ ] - [ ] Rate limiting and API gateway integration
