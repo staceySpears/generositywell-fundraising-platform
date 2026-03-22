@@ -212,7 +212,7 @@ The original implementation functioned as a foundational proof-of-concept. This 
               >
               > - [ ] ### Phase 4 — Production Hardening
               >
-              > - [ ] - [ ] CI/CD pipeline (GitHub Actions → AWS CodePipeline)
+              > - [ ] - [ ] CI/CD pipeline (GitHub Actions to AWS CodePipeline)
               > - [ ] - [ ] Frontend deployment to S3 + CloudFront
               > - [ ] - [ ] End-to-end test coverage (Playwright or Cypress)
               > - [ ] - [ ] Rate limiting and API gateway integration
