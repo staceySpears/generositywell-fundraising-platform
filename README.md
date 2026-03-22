@@ -186,41 +186,23 @@ The original implementation functioned as a foundational proof-of-concept. This 
               >
               > ## Roadmap
               >
-              > ### Phase 1 — Architecture Stabilization
+              > | Phase | Focus | Status |
+              > |---|---|---|
+              > | **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21 upgrade, multi-module Gradle, Docker dev infra, React+Vite frontend | ✅ In Progress |
+              > | **Phase 2 — Feature Completion** | Event lifecycle, JWT auth / Spring Security, campaign linking, frontend auth flow | Planned |
+              > | **Phase 3 — Platform Enhancements** | Donations, ticketing, notifications (SES/SNS), donor dashboard, campaign management UI | Planned |
+              > | **Phase 4 — Production Hardening** | CI/CD pipeline, S3+CloudFront deploy, E2E tests, rate limiting, API gateway | Planned |
               >
-              > **Status: In Progress**
+              > ### Phase 1 Detail — Architecture Stabilization
               >
-              > - [x] Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2
-              > - [ ] - [x] Established multi-module Gradle structure
-              > - [ ] - [x] Validated Docker-based local dev infrastructure (Redis, DynamoDB)
-              > - [ ] - [x] Frontend migrated from Webpack 4 / vanilla JS to React + Vite
-              > - [ ] - [ ] Complete repository layer migration to AWS SDK v2 Enhanced Client
-              > - [ ] - [ ] Finalize standard DTOs and global exception handling
+              > Completed:
               >
-              > - [ ] ---
-              >
-              > - [ ] ### Phase 2 — Feature Completion
-              >
-              > - [ ] - [ ] Event lifecycle management (Create, Update, Cancel)
-              > - [ ] - [ ] User authentication and authorization (JWT / Spring Security)
-              > - [ ] - [ ] Campaign and event linking
-              > - [ ] - [ ] Frontend auth flow (login, register, protected routes)
-              >
-              > - [ ] ---
-              >
-              > - [ ] ### Phase 3 — Platform Enhancements
-              >
-              > - [ ] - [ ] Donation processing workflows
-              > - [ ] - [ ] Event ticketing and registration
-              > - [ ] - [ ] Automated notifications (Email/SMS via AWS SES/SNS)
-              > - [ ] - [ ] Donor dashboard with campaign progress tracking
-              > - [ ] - [ ] Frontend campaign creation and management UI
-              >
-              > - [ ] ---
-              >
-              > - [ ] ### Phase 4 — Production Hardening
-              >
-              > - [ ] - [ ] CI/CD pipeline (GitHub Actions to AWS CodePipeline)
-              > - [ ] - [ ] Frontend deployment to S3 + CloudFront
-              > - [ ] - [ ] End-to-end test coverage (Playwright or Cypress)
-              > - [ ] - [ ] Rate limiting and API gateway integration
+              > - Spring Boot 3.2.5, Java 21, Gradle 8.7, AWS SDK v2 migration
+              > - - Multi-module Gradle structure established
+              >   - - Docker-based local dev infrastructure validated (Redis, DynamoDB)
+              >     - - Frontend migrated from Webpack 4 / vanilla JS to React + Vite
+              >      
+              >       - Remaining:
+              >      
+              >       - - Complete repository layer migration to AWS SDK v2 Enhanced Client
+              >         - - Finalize standard DTOs and global exception handling
