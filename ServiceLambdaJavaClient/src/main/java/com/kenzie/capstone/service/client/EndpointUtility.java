@@ -1,10 +1,10 @@
 package com.kenzie.capstone.service.client;
 
-import com.amazonaws.services.apigateway.AmazonApiGateway;
-import com.amazonaws.services.apigateway.AmazonApiGatewayClientBuilder;
-import com.amazonaws.services.apigateway.model.GetRestApisRequest;
-import com.amazonaws.services.apigateway.model.GetRestApisResult;
-import com.amazonaws.services.apigateway.model.RestApi;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
+import software.amazon.awssdk.services.apigateway.model.GetRestApisRequest;
+import software.amazon.awssdk.services.apigateway.model.GetRestApisResponse;
+import software.amazon.awssdk.services.apigateway.model.RestApi;
 
 import java.io.IOException;
 import java.net.URI;
@@ -41,15 +41,18 @@ public class EndpointUtility {
 
         String deploymentName = getStackName();
 
-        AmazonApiGateway apiGatewayClient = AmazonApiGatewayClientBuilder.defaultClient();
-        GetRestApisRequest request = new GetRestApisRequest();
-        request.setLimit(500);
-        GetRestApisResult result = apiGatewayClient.getRestApis(request);
+        ApiGatewayClient apiGatewayClient = ApiGatewayClient.builder()
+                .region(Region.of(region))
+                .build();
+        GetRestApisRequest request = GetRestApisRequest.builder()
+                .limit(500)
+                .build();
+        GetRestApisResponse result = apiGatewayClient.getRestApis(request);
 
         String endpointId = null;
-        for (RestApi restApi : result.getItems()) {
-            if (restApi.getName().equals(deploymentName)) {
-                endpointId = restApi.getId();
+        for (RestApi restApi : result.items()) {
+            if (restApi.name().equals(deploymentName)) {
+                endpointId = restApi.id();
                 break;
             }
         }
