@@ -1,24 +1,25 @@
 package com.kenzie.appserver.repositories.model;
 
+import com.kenzie.appserver.service.model.Supporter;
+import com.kenzie.appserver.service.model.User;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import com.kenzie.appserver.service.model.Attendee;
-import com.kenzie.appserver.service.model.User;
 
 import java.util.List;
 
 @DynamoDbBean
-public class EventRecord {
+public class CampaignRecord {
+
     private String id;
     private String name;
     private String date;
     private User user;
-    private List<Attendee> listOfAttending;
+    private List<Supporter> supporters;
     private String address;
     private String description;
 
-    public EventRecord() {}
+    public CampaignRecord() {}
 
     @DynamoDbPartitionKey
     public String getId() {
@@ -54,13 +55,13 @@ public class EventRecord {
         this.user = user;
     }
 
-    @DynamoDbConvertedBy(AttendeeTypeConverter.class)
-    public List<Attendee> getListOfAttending() {
-        return listOfAttending;
+    @DynamoDbConvertedBy(SupporterTypeConverter.class)
+    public List<Supporter> getSupporters() {
+        return supporters;
     }
 
-    public void setListOfAttending(List<Attendee> listOfAttending) {
-        this.listOfAttending = listOfAttending;
+    public void setSupporters(List<Supporter> supporters) {
+        this.supporters = supporters;
     }
 
     public String getAddress() {
@@ -77,10 +78,5 @@ public class EventRecord {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
     }
 }

@@ -1,18 +1,18 @@
 package com.kenzie.appserver.service.model;
 
-public class Attendee {
+public class Supporter {
 
     public String id;
     public String name;
     public String email;
 
-    public Attendee(String id, String name, String email) {
+    public Supporter(String id, String name, String email) {
         this.id = id;
         this.name = name;
         this.email = email;
     }
 
-    public Attendee() {}
+    public Supporter() {}
 
     public String getId() {
         return id;
