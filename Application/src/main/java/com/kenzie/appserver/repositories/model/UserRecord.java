@@ -8,9 +8,10 @@ public class UserRecord {
     private String id;
     private String name;
     private String email;
+    private String passwordHash;
 
     public UserRecord(){}
-    public UserRecord( String id,String name, String email) {
+    public UserRecord(String id, String name, String email) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -36,5 +37,12 @@ public class UserRecord {
     }
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }

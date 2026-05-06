@@ -7,6 +7,7 @@ import com.kenzie.appserver.controller.model.DonationRequest;
 import com.kenzie.appserver.service.CampaignService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -54,8 +55,8 @@ public class CampaignController {
     @PostMapping("/{campaignId}/close")
     public ResponseEntity<CampaignResponse> closeCampaign(
             @PathVariable("campaignId") String campaignId,
-            @RequestParam("userId") String userId) {
-        CampaignResponse response = campaignService.closeCampaign(campaignId, userId);
+            Authentication authentication) {
+        CampaignResponse response = campaignService.closeCampaign(campaignId, authentication.getName());
         return ResponseEntity.ok(response);
     }
 

@@ -7,6 +7,11 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
+import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+
+import java.util.Map;
 import java.util.Optional;
 
 /** DAO for UserRecord persistence; replaces the legacy EventUserRepository. */
@@ -38,5 +43,17 @@ public class UserDao {
 
     public boolean existsById(String id) {
         return findById(id).isPresent();
+    }
+
+    // Full scan filtered by email — replace with a GSI when table grows
+    public Optional<UserRecord> findByEmail(String email) {
+        Expression filter = Expression.builder()
+                .expression("email = :email")
+                .expressionValues(Map.of(":email", AttributeValue.builder().s(email).build()))
+                .build();
+        return userTable.scan(ScanEnhancedRequest.builder().filterExpression(filter).build())
+                .items()
+                .stream()
+                .findFirst();
     }
 }
