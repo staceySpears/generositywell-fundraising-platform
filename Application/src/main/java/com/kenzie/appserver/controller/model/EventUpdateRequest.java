@@ -4,36 +4,37 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kenzie.appserver.service.model.Customer;
 import com.kenzie.appserver.service.model.User;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public class EventUpdateRequest {
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("id")
     private String id;
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("name")
     private String name;
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("date")
     private String date;
 
-    @NotEmpty
+    @NotNull
     @JsonProperty("user")
     private User user;
 
-    @NotEmpty
+    @NotNull
     @JsonProperty("listOfAttending")
     private List<Customer> listOfAttending;
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("address")
     private String address;
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("description")
     private String description;
 

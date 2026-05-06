@@ -4,15 +4,11 @@ import com.kenzie.appserver.controller.model.CreateEventRequest;
 import com.kenzie.appserver.controller.model.EventResponse;
 import com.kenzie.appserver.controller.model.EventUpdateRequest;
 import com.kenzie.appserver.service.EventService;
-import com.kenzie.appserver.service.model.Event;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -35,19 +31,14 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<EventResponse> addEvent(@RequestBody CreateEventRequest createEventRequest){
-        if (createEventRequest == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Event check request");
-        }
+    public ResponseEntity<EventResponse> addEvent(@Valid @RequestBody CreateEventRequest createEventRequest){
         EventResponse eventResponse = eventService.addNewEvent(createEventRequest);
-
-        return ResponseEntity.ok(eventResponse);
-//        return ResponseEntity.created(URI.create("/event/" + eventResponse.getName())).body(eventResponse);
+        return ResponseEntity.created(URI.create("/events/" + eventResponse.getId())).body(eventResponse);
     }
 
     // What do we want to be available to be updated?
     @PutMapping("/{eventId}")
-    public ResponseEntity<EventResponse> updateEvent(@RequestBody EventUpdateRequest eventUpdateRequest) {
+    public ResponseEntity<EventResponse> updateEvent(@Valid @RequestBody EventUpdateRequest eventUpdateRequest) {
 
         EventResponse eventResponse = eventService.updateEventById(eventUpdateRequest);
 

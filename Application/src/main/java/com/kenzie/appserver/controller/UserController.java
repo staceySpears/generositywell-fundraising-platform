@@ -1,12 +1,10 @@
 package com.kenzie.appserver.controller;
 
 import com.kenzie.appserver.controller.model.*;
-import com.kenzie.appserver.service.EventService;
 import com.kenzie.appserver.service.UserService;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 
@@ -30,17 +28,14 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> addNewUser(@RequestBody CreateUserRequest createUserRequest){
-        if (createUserRequest == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Customer Name");
-        }
+    public ResponseEntity<UserResponse> addNewUser(@Valid @RequestBody CreateUserRequest createUserRequest){
         UserResponse userResponse = userService.createUser(createUserRequest);
 
         return ResponseEntity.created(URI.create("/user/" + userResponse.getName())).body(userResponse);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+    public ResponseEntity<UserResponse> updateUser(@Valid @RequestBody UserUpdateRequest userUpdateRequest) {
 
         UserResponse userResponse = userService.updateUser(userUpdateRequest);
 
