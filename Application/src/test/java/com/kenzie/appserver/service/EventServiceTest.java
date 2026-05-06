@@ -2,329 +2,264 @@ package com.kenzie.appserver.service;
 
 import com.kenzie.appserver.config.CacheStore;
 import com.kenzie.appserver.controller.model.CreateEventRequest;
-import com.kenzie.appserver.controller.model.CreateUserRequest;
 import com.kenzie.appserver.controller.model.EventResponse;
 import com.kenzie.appserver.controller.model.EventUpdateRequest;
-import com.kenzie.appserver.repositories.EventUserRepository;
+import com.kenzie.appserver.repositories.EventDao;
 import com.kenzie.appserver.repositories.model.EventRecord;
-import com.kenzie.appserver.repositories.EventRepository;
-import com.kenzie.appserver.repositories.model.UserRecord;
 import com.kenzie.appserver.service.model.Customer;
 import com.kenzie.appserver.service.model.User;
-import com.kenzie.capstone.service.client.LambdaServiceClient;
-import net.andreinc.mockneat.MockNeat;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
-import org.mockito.exceptions.base.MockitoAssertionError;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-import static java.util.UUID.randomUUID;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class EventServiceTest {
-    private EventRepository eventRepository;
-    private EventUserRepository eventUserRepository;
+@ExtendWith(MockitoExtension.class)
+class EventServiceTest {
+
+    @Mock
+    private EventDao eventDao;
+
+    @Mock
+    private CacheStore cache;
+
+    @InjectMocks
     private EventService eventService;
-    private LambdaServiceClient lambdaServiceClient;
-    private CacheStore cacheStore;
 
-    private final MockNeat mockNeat = MockNeat.threadLocal();
-
-    @BeforeEach
-    void setup() {
-        eventRepository = mock(EventRepository.class);
-        eventUserRepository = mock(EventUserRepository.class);
-        lambdaServiceClient = mock(LambdaServiceClient.class);
-        cacheStore = mock(CacheStore.class);
-        eventService = new EventService(eventRepository, lambdaServiceClient, eventUserRepository, cacheStore);
-    }
     /** ------------------------------------------------------------------------
-     *  eventService.getEventById
+     *  EventService.getEventById
      *  ------------------------------------------------------------------------ **/
-    @Test
-    void getEventById() {
-        // GIVEN
-        String id = randomUUID().toString();
-        List<Customer> usersAttending = mock(List.class);
-        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
 
-        EventRecord record = new EventRecord();
-        record.setId(id);
-        record.setName(mockNeat.strings().get());
-        record.setUser(user);
-        record.setListOfAttending(usersAttending);
-        record.setAddress(mockNeat.strings().get());
-        record.setDescription(mockNeat.strings().get());
-        // WHEN
-        when(eventRepository.findById(id)).thenReturn(Optional.of(record));
-        when(cacheStore.get(record.getId())).thenReturn(Optional.of(record));
-        Optional<EventResponse> eventResponse = Optional.ofNullable(eventService.getEventById(record.getId()));
-        // THEN
-        Assertions.assertNotNull(eventResponse, "The event is returned");
-        Assertions.assertEquals(record.getId(), eventResponse.get().getId(), "The id matches");
-        Assertions.assertEquals(record.getName(), eventResponse.get().getName(), "The name matches");
+    @Test
+    void getEventById_cacheHit_returnsResponseWithoutCallingDao() {
+        EventRecord record = eventRecord("event-1");
+        when(cache.get("event-1")).thenReturn(Optional.of(record));
+
+        EventResponse response = eventService.getEventById("event-1");
+
+        assertNotNull(response);
+        assertEquals("event-1", response.getId());
+        assertEquals(record.getName(), response.getName());
+        verify(eventDao, never()).findById(any());
     }
 
-//    @Test
-//    void getEventById() {
-//        // GIVEN
-//        String id = randomUUID().toString();
-//        List<Customer> usersAttending = mock(List.class);
-//        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
-//
-//        EventRecord record = new EventRecord();
-//        record.setId(id);
-//        record.setName(mockNeat.strings().get());
-//        record.setUser(user);
-//        record.setListOfAttending(usersAttending);
-//        record.setAddress(mockNeat.strings().get());
-//        record.setDescription(mockNeat.strings().get());
-//        // WHEN
-//        //when(eventRepository.findById(id)).thenReturn(Optional.of(record));
-//        when(cacheStore.get(record.getId())).thenReturn(Optional.of(record));
-//        EventResponse eventResponse = eventService.getEventById(id);
-//        // THEN
-//        Assertions.assertNotNull(eventResponse, "The event is returned");
-//        Assertions.assertEquals(record.getId(), eventResponse.getId(), "The id matches");
-//        Assertions.assertEquals(record.getName(), eventResponse.getName(), "The name matches");
-//    }
-    /** ------------------------------------------------------------------------
-     *  eventService.addNewEvent
-     *  ------------------------------------------------------------------------ **/
     @Test
-    void addNewEvent() {
+    void getEventById_cacheMiss_queriesDaoAndPopulatesCache() {
+        EventRecord record = eventRecord("event-2");
+        when(cache.get("event-2")).thenReturn(null);
+        when(eventDao.findById("event-2")).thenReturn(Optional.of(record));
 
-        String eventName = mockNeat.strings().get();
-        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
+        EventResponse response = eventService.getEventById("event-2");
+
+        assertNotNull(response);
+        assertEquals("event-2", response.getId());
+        verify(cache).add(eq("event-2"), eq(Optional.of(record)));
+    }
+
+    @Test
+    void getEventById_notFound_returnsNull() {
+        when(cache.get("ghost")).thenReturn(null);
+        when(eventDao.findById("ghost")).thenReturn(Optional.empty());
+
+        EventResponse response = eventService.getEventById("ghost");
+
+        assertNull(response);
+        verify(cache).add(eq("ghost"), eq(Optional.empty()));
+    }
+
+    /** ------------------------------------------------------------------------
+     *  EventService.addNewEvent
+     *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void addNewEvent_validRequest_savesAndReturnsResponse() {
+        User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
 
         CreateEventRequest request = new CreateEventRequest();
-        request.setName(eventName);
+        request.setName("Fundraiser Gala");
         request.setDate(LocalDate.now().toString());
         request.setUser(user);
-        request.setListOfAttending(mock(List.class));
-        request.setDescription(mockNeat.strings().get());
+        request.setListOfAttending(new ArrayList<>());
+        request.setAddress("123 Main St");
+        request.setDescription("Annual gala");
 
-        ArgumentCaptor<EventRecord> eventRecordCaptor = ArgumentCaptor.forClass(EventRecord.class);
-        // WHEN
-        when(eventUserRepository.existsById(request.getUser().getId())).thenReturn(true);
-        EventResponse eventResponse = eventService.addNewEvent(request);
-        // THEN
-        Assertions.assertNotNull(eventResponse);
-        verify(eventRepository).save(eventRecordCaptor.capture());
+        ArgumentCaptor<EventRecord> captor = ArgumentCaptor.forClass(EventRecord.class);
 
-        EventRecord record = eventRecordCaptor.getValue();
+        EventResponse response = eventService.addNewEvent(request);
 
-        Assertions.assertNotNull(record, "The event record is returned");
-        Assertions.assertNotNull(record.getId(), "The event id exists");
-        Assertions.assertEquals(record.getName(), eventName, "The event name matches");
-        Assertions.assertEquals(record.getDate(), request.getDate(), "Dates match");
-        Assertions.assertEquals(record.getListOfAttending(), request.getListOfAttending(), "Lists match");
-        Assertions.assertEquals(record.getAddress(), request.getAddress(), "Address match");
-        Assertions.assertEquals(record.getDescription(), request.getDescription(), "Descriptions match");
+        verify(eventDao).save(captor.capture());
+        EventRecord saved = captor.getValue();
+
+        assertNotNull(response);
+        assertDoesNotThrow(() -> UUID.fromString(response.getId()), "ID should be a valid UUID");
+        assertEquals("Fundraiser Gala", response.getName());
+        assertEquals(saved.getId(), response.getId());
+        assertEquals(saved.getName(), response.getName());
+        assertEquals(saved.getDate(), response.getDate());
     }
 
-    @Test
-    void addNewEvent_createEventRequest_isNull_throws_exception() {
-
-        CreateEventRequest createEventRequest = null;
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> eventService.addNewEvent(createEventRequest));
-        // THEN
-        try {
-            verify(eventRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
-    }
     /** ------------------------------------------------------------------------
-     *  eventService.updateEventById
+     *  EventService.updateEventById
      *  ------------------------------------------------------------------------ **/
-    @Test
-    void updateEventById() {
-
-        String eventId = randomUUID().toString();
-        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
-
-        EventRecord oldEventRecord = new EventRecord();
-        oldEventRecord.setId(eventId);
-        oldEventRecord.setName(mockNeat.strings().get());
-        oldEventRecord.setDate(LocalDate.now().minusDays(2).toString());
-        oldEventRecord.setUser(user);
-        oldEventRecord.setListOfAttending(mock(List.class));
-        oldEventRecord.setAddress(mockNeat.strings().get());
-        oldEventRecord.setDescription(mockNeat.strings().get());
-
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(oldEventRecord));
-        ArgumentCaptor<EventRecord> eventRecordCaptor = ArgumentCaptor.forClass(EventRecord.class);
-
-        EventUpdateRequest eventUpdateRequest = new EventUpdateRequest();
-        eventUpdateRequest.setId(oldEventRecord.getId());
-        eventUpdateRequest.setName(mockNeat.names().get());
-        eventUpdateRequest.setDate(LocalDate.now().toString());
-        eventUpdateRequest.setUser(oldEventRecord.getUser());
-        eventUpdateRequest.setListOfAttending(mock(List.class));
-        eventUpdateRequest.setAddress(mockNeat.addresses().get());
-        eventUpdateRequest.setDescription(mockNeat.departments().get());
-
-        eventService.updateEventById(eventUpdateRequest);
-        verify(eventRepository).save(eventRecordCaptor.capture());
-
-        EventRecord record = eventRecordCaptor.getValue();
-
-        Assertions.assertNotNull(record, "The event record has been returned");
-        Assertions.assertEquals(record.getId(), eventUpdateRequest.getId(), "The event id matches");
-        Assertions.assertEquals(record.getName(), eventUpdateRequest.getName(), "The event name matches");
-        Assertions.assertEquals(record.getDate(), eventUpdateRequest.getDate(), "The event date has been changed");
-        Assertions.assertEquals(record.getListOfAttending(), eventUpdateRequest.getListOfAttending(), "Lists match");
-        Assertions.assertEquals(record.getAddress(), eventUpdateRequest.getAddress(), "Both of the address matches");
-        Assertions.assertEquals(record.getDescription(), eventUpdateRequest.getDescription(), "The descriptions match");
-    }
 
     @Test
-    void updateEventById_idIsNull_throws_responseStatusException() {
-        EventUpdateRequest eventUpdateRequest = new EventUpdateRequest();
-        eventUpdateRequest.setId(UUID.randomUUID().toString());
+    void updateEventById_userMatches_savesUpdatedRecord() {
+        User user = new User("user-1", "Stacey", "stacey@example.com");
+        EventRecord existing = eventRecord("event-3");
+        existing.setUser(user);
 
-        when(eventRepository.findById(eventUpdateRequest.getId())).thenReturn(Optional.empty());
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> eventService.updateEventById(eventUpdateRequest));
-        // THEN
-        try {
-            verify(eventRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
-    }
-    /** ------------------------------------------------------------------------
-     *  eventService.deleteEvent
-     *  ------------------------------------------------------------------------ **/
-    @Test
-    void deleteEvent(){
+        when(eventDao.findById("event-3")).thenReturn(Optional.of(existing));
+        ArgumentCaptor<EventRecord> captor = ArgumentCaptor.forClass(EventRecord.class);
 
-        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
-
-        CreateEventRequest request = new CreateEventRequest();
-        request.setName(mockNeat.strings().get());
+        EventUpdateRequest request = new EventUpdateRequest();
+        request.setId("event-3");
+        request.setName("Updated Name");
         request.setDate(LocalDate.now().toString());
         request.setUser(user);
-        request.setListOfAttending(mock(List.class));
-        request.setAddress(mockNeat.addresses().get());
-        request.setDescription(mockNeat.strings().get());
+        request.setListOfAttending(new ArrayList<>());
+        request.setAddress("456 New Ave");
+        request.setDescription("Updated description");
 
-        EventResponse eventResponse = eventService.addNewEvent(request);
-        when(eventRepository.existsById(eventResponse.getId())).thenReturn(true);
+        EventResponse response = eventService.updateEventById(request);
 
-        eventService.deleteEvent(eventResponse.getId());
-        verify(eventRepository).deleteById(eventResponse.getId());
+        verify(eventDao).save(captor.capture());
+        EventRecord saved = captor.getValue();
+        assertEquals("Updated Name", saved.getName());
+        assertEquals("456 New Ave", saved.getAddress());
+        assertEquals("Updated Name", response.getName());
+        verify(cache).evict("event-3");
     }
 
     @Test
-    void deleteEvent_eventId_isEmpty_throws_exception() {
+    void updateEventById_eventNotFound_throwsNotFound() {
+        when(eventDao.findById("missing")).thenReturn(Optional.empty());
 
-        String eventId = "";
-        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> eventService.deleteEvent(eventId));
-        // THEN
-        try {
-            verify(eventRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
+        EventUpdateRequest request = new EventUpdateRequest();
+        request.setId("missing");
+        request.setUser(new User("user-1", "Stacey", "stacey@example.com"));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> eventService.updateEventById(request)
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(eventDao, never()).save(any());
     }
 
     @Test
-    void deleteEvent_eventId_doesNotExist_throws_exception() {
+    void updateEventById_userMismatch_throwsForbidden() {
+        User owner = new User("user-1", "Stacey", "stacey@example.com");
+        User other = new User("user-2", "Jordan", "jordan@example.com");
 
-        String eventId = randomUUID().toString();
-        when(eventRepository.existsById(eventId)).thenReturn(false);
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> eventService.deleteEvent(eventId));
-        // THEN
-        try {
-            verify(eventRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
+        EventRecord existing = eventRecord("event-4");
+        existing.setUser(owner);
+        when(eventDao.findById("event-4")).thenReturn(Optional.of(existing));
+
+        EventUpdateRequest request = new EventUpdateRequest();
+        request.setId("event-4");
+        request.setUser(other);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> eventService.updateEventById(request)
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(eventDao, never()).save(any());
     }
 
     /** ------------------------------------------------------------------------
-     *  eventService.getAllEvents
+     *  EventService.deleteEvent
      *  ------------------------------------------------------------------------ **/
 
     @Test
-    void getAllEvents_Successful(){
+    void deleteEvent_emptyId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> eventService.deleteEvent("")
+        );
 
-        Date dateOfToday = new Date();
-        User user = new User(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(eventDao, never()).deleteById(any());
+    }
 
-        Customer userA1 = new Customer(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
-        Customer userA2 = new Customer(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
-        Customer userA3 = new Customer(UUID.randomUUID().toString(), mockNeat.strings().get(), mockNeat.strings().get());
+    @Test
+    void deleteEvent_eventDoesNotExist_throwsNotFound() {
+        String id = UUID.randomUUID().toString();
+        when(eventDao.existsById(id)).thenReturn(false);
 
-        List<Customer> listOfUsersAttending = new ArrayList<>();
-        listOfUsersAttending.add(userA1);
-        listOfUsersAttending.add(userA2);
-        listOfUsersAttending.add(userA3);
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> eventService.deleteEvent(id)
+        );
 
-        //GIVEN
-        EventRecord event1 = new EventRecord();
-        event1.setId(randomUUID().toString());
-        event1.setName("Event 1");
-        event1.setDate(dateOfToday.toString());
-        event1.setUser(user);
-        event1.setListOfAttending(listOfUsersAttending);
-        event1.setAddress("Event Address");
-        event1.setDescription("Event Description");
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(eventDao, never()).deleteById(any());
+    }
 
-        EventRecord event2 = new EventRecord();
-        event1.setId(randomUUID().toString());
-        event1.setName("Event 2");
-        event1.setDate(dateOfToday.toString());
-        event1.setUser(user);
-        event1.setListOfAttending(listOfUsersAttending);
-        event1.setAddress("Event Address 2");
-        event1.setDescription("Event Description 2");
+    @Test
+    void deleteEvent_eventExists_deletesAndEvictsCache() {
+        String id = UUID.randomUUID().toString();
+        when(eventDao.existsById(id)).thenReturn(true);
 
-        List<EventRecord> events = new ArrayList<>();
-        events.add(event1);
-        events.add(event2);
+        eventService.deleteEvent(id);
 
-        when(eventRepository.findAll()).thenReturn(events);
+        verify(eventDao).deleteById(id);
+        verify(cache).evict(id);
+    }
+
+    /** ------------------------------------------------------------------------
+     *  EventService.getAllEvents
+     *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void getAllEvents_returnsMappedResponseList() {
+        User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
+        List<Customer> attendees = List.of(
+                new Customer(UUID.randomUUID().toString(), "Alex", "alex@example.com")
+        );
+
+        EventRecord e1 = eventRecord("event-a");
+        e1.setUser(user);
+        e1.setListOfAttending(attendees);
+
+        EventRecord e2 = eventRecord("event-b");
+        e2.setUser(user);
+        e2.setListOfAttending(attendees);
+
+        when(eventDao.findAll()).thenReturn(List.of(e1, e2));
 
         List<EventResponse> responses = eventService.getAllEvents();
 
-        Assertions.assertNotNull(responses, "The List of Events is returned");
-        Assertions.assertEquals(2, responses.size(), "There were two events returned");
-
-        for (EventResponse event : responses) {
-            if (event.getId() == event1.getId()) {
-                Assertions.assertEquals(event1.getId(), event.getId(), "The event id matches");
-                Assertions.assertEquals(event1.getName(), event.getName(), "The event name matches");
-                Assertions.assertEquals(event1.getDate(), event.getDate(), "The event date matches");
-                Assertions.assertEquals(event1.getUser(), event.getUser(), "The event user matches");
-                Assertions.assertEquals(event1.getListOfAttending(), event.getListOfAttending(), "The event list of users match");
-                Assertions.assertEquals(event1.getAddress(), event.getAddress(), "The event address matches");
-                Assertions.assertEquals(event1.getDescription(), event.getDescription(), "The event description matches");
-            } else if (event.getId() == event2.getId()) {
-                Assertions.assertEquals(event2.getId(), event.getId(), "The event id matches");
-                Assertions.assertEquals(event2.getName(), event.getName(), "The event name matches");
-                Assertions.assertEquals(event2.getDate(), event.getDate(), "The event date matches");
-                Assertions.assertEquals(event2.getListOfAttending(), event.getListOfAttending(), "The event list of users match");
-                Assertions.assertEquals(event2.getUser(), event.getUser(), "The event user matches");
-                Assertions.assertEquals(event2.getAddress(), event.getAddress(), "The event address matches");
-                Assertions.assertEquals(event2.getDescription(), event.getDescription(), "The event description matches");
-            } else {
-                Assertions.assertTrue(false, "EventResponse returned that was not in the records!");
-            }
-        }
+        assertEquals(2, responses.size());
+        assertTrue(responses.stream().anyMatch(r -> r.getId().equals("event-a")));
+        assertTrue(responses.stream().anyMatch(r -> r.getId().equals("event-b")));
     }
 
+    // Builds a minimal EventRecord with the given id
+    private EventRecord eventRecord(String id) {
+        EventRecord record = new EventRecord();
+        record.setId(id);
+        record.setName("Test Event " + id);
+        record.setDate(LocalDate.now().toString());
+        record.setAddress("123 Test St");
+        record.setDescription("Test description");
+        record.setListOfAttending(new ArrayList<>());
+        return record;
+    }
 }

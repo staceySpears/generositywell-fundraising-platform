@@ -1,203 +1,195 @@
 package com.kenzie.appserver.service;
 
-import com.kenzie.appserver.controller.model.*;
-import com.kenzie.appserver.repositories.EventRepository;
-import com.kenzie.appserver.repositories.EventUserRepository;
-import com.kenzie.appserver.repositories.model.EventRecord;
+import com.kenzie.appserver.controller.model.CreateUserRequest;
+import com.kenzie.appserver.controller.model.UserResponse;
+import com.kenzie.appserver.controller.model.UserUpdateRequest;
+import com.kenzie.appserver.repositories.UserDao;
 import com.kenzie.appserver.repositories.model.UserRecord;
-import com.kenzie.appserver.service.model.User;
-import com.kenzie.capstone.service.client.LambdaServiceClient;
-import net.andreinc.mockneat.MockNeat;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
-import org.mockito.exceptions.base.MockitoAssertionError;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static java.util.UUID.randomUUID;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class UserServiceTest {
-    private EventUserRepository eventUserRepository;
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserDao userDao;
+
+    @InjectMocks
     private UserService userService;
-    private final MockNeat mockNeat = MockNeat.threadLocal();
 
-
-    @BeforeEach
-    void setup() {
-        eventUserRepository = mock(EventUserRepository.class);
-        userService = new UserService(eventUserRepository);
-    }
     /** ------------------------------------------------------------------------
      *  UserService.getUserById
      *  ------------------------------------------------------------------------ **/
+
     @Test
-    void getUserById() {
+    void getUserById_userExists_returnsResponse() {
+        UserRecord record = new UserRecord();
+        record.setId("user-1");
+        record.setName("Stacey");
+        record.setEmail("stacey@example.com");
 
-        UserRecord userRecord = new UserRecord();
-        userRecord.setId(UUID.randomUUID().toString());
-        userRecord.setName(mockNeat.strings().get());
-        userRecord.setEmail(mockNeat.strings().get());
+        when(userDao.findById("user-1")).thenReturn(Optional.of(record));
 
-        when(eventUserRepository.findById(userRecord.getId())).thenReturn(Optional.of(userRecord));
+        UserResponse response = userService.getUserById("user-1");
 
-        UserResponse userResponse = userService.getUserById(userRecord.getId());
-
-        Assertions.assertNotNull(userResponse);
-        Assertions.assertEquals(userResponse.getId(), userRecord.getId(), "Id matches");
-        Assertions.assertEquals(userResponse.getName(), userRecord.getName(), "Name matches");
-        Assertions.assertEquals(userResponse.getEmail(), userRecord.getEmail(), "Email matches");
+        assertNotNull(response);
+        assertEquals("user-1", response.getId());
+        assertEquals("Stacey", response.getName());
+        assertEquals("stacey@example.com", response.getEmail());
     }
+
+    @Test
+    void getUserById_userDoesNotExist_returnsNull() {
+        when(userDao.findById("missing")).thenReturn(Optional.empty());
+
+        UserResponse response = userService.getUserById("missing");
+
+        assertNull(response);
+    }
+
     /** ------------------------------------------------------------------------
      *  UserService.createUser
      *  ------------------------------------------------------------------------ **/
+
     @Test
-    void createUser() {
+    void createUser_validRequest_savesAndReturnsResponse() {
+        CreateUserRequest request = new CreateUserRequest();
+        request.setName("Jordan");
+        request.setEmail("jordan@example.com");
 
-       CreateUserRequest createUserRequest = new CreateUserRequest();
-       createUserRequest.setName(mockNeat.strings().get());
-       createUserRequest.setEmail(UUID.randomUUID().toString());
+        ArgumentCaptor<UserRecord> captor = ArgumentCaptor.forClass(UserRecord.class);
 
-       ArgumentCaptor<UserRecord> customerRecordCaptor = ArgumentCaptor.forClass(UserRecord.class);
-       UserResponse userResponse = userService.createUser(createUserRequest);
+        UserResponse response = userService.createUser(request);
 
-       when(eventUserRepository.existsById(userResponse.getId())).thenReturn(true);
+        verify(userDao).save(captor.capture());
+        UserRecord saved = captor.getValue();
 
-       verify(eventUserRepository).save(customerRecordCaptor.capture());
-       Assertions.assertNotNull(userResponse);
-       Assertions.assertEquals(userResponse.getId(), userResponse.getId(), "user id matches");
-       Assertions.assertEquals(userResponse.getName(), createUserRequest.getName(), "user names matches");
-       Assertions.assertEquals(userResponse.getEmail(), createUserRequest.getEmail(), "user email matches");
+        assertNotNull(response);
+        assertEquals("Jordan", response.getName());
+        assertEquals("jordan@example.com", response.getEmail());
+        assertDoesNotThrow(() -> UUID.fromString(response.getId()), "ID should be a valid UUID");
+        assertEquals(saved.getId(), response.getId());
     }
 
     @Test
-    void createUser_createEventRequest_nameIsNull_throws_exception() {
+    void createUser_nullName_throwsBadRequest() {
+        CreateUserRequest request = new CreateUserRequest();
+        request.setName(null);
+        request.setEmail("jordan@example.com");
 
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(null);
-        createUserRequest.setEmail(mockNeat.emails().get());
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> userService.createUser(createUserRequest));
-        // THEN
-        try {
-            verify(eventUserRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the username is null. - " + error);
-        }
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.createUser(request)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(userDao, never()).save(any());
     }
 
     @Test
-    void createUser_createEventRequest_emailIsNull_throws_exception() {
+    void createUser_nullEmail_throwsBadRequest() {
+        CreateUserRequest request = new CreateUserRequest();
+        request.setName("Jordan");
+        request.setEmail(null);
 
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().get());
-        createUserRequest.setEmail(null);
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> userService.createUser(createUserRequest));
-        // THEN
-        try {
-            verify(eventUserRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the email is null. - " + error);
-        }
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.createUser(request)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(userDao, never()).save(any());
     }
 
     /** ------------------------------------------------------------------------
      *  UserService.updateUser
      *  ------------------------------------------------------------------------ **/
+
     @Test
-    void updateUser() {
+    void updateUser_userExists_savesAndReturnsUpdatedResponse() {
+        UserRecord existing = new UserRecord();
+        existing.setId("user-2");
+        existing.setName("Old Name");
+        existing.setEmail("old@example.com");
 
-        UserRecord userRecord = new UserRecord();
-        userRecord.setId(UUID.randomUUID().toString());
-        userRecord.setName(mockNeat.strings().get());
-        userRecord.setEmail(UUID.randomUUID().toString());
+        when(userDao.findById("user-2")).thenReturn(Optional.of(existing));
 
-        String newName = mockNeat.strings().get();
-        String newEmail = UUID.randomUUID().toString();
+        ArgumentCaptor<UserRecord> captor = ArgumentCaptor.forClass(UserRecord.class);
 
-        when(eventUserRepository.findById(userRecord.getId())).thenReturn(Optional.of(userRecord));
-        ArgumentCaptor<UserRecord> userRecordArgumentCaptor = ArgumentCaptor.forClass(UserRecord.class);
+        UserResponse response = userService.updateUser(new UserUpdateRequest("user-2", "New Name", "new@example.com"));
 
-        userService.updateUser(new UserUpdateRequest(userRecord.getId(), newName, newEmail));
+        verify(userDao).save(captor.capture());
+        UserRecord saved = captor.getValue();
 
-        verify(eventUserRepository).save(userRecordArgumentCaptor.capture());
-        UserRecord record = userRecordArgumentCaptor.getValue();
-
-        Assertions.assertNotNull(record);
-        Assertions.assertNotNull(record.getId(), "User id exists");
-        Assertions.assertEquals(record.getName(), newName, "User name matches");
-        Assertions.assertEquals(record.getEmail(), newEmail, "User email matches");
+        assertEquals("user-2", saved.getId());
+        assertEquals("New Name", saved.getName());
+        assertEquals("new@example.com", saved.getEmail());
+        assertEquals("New Name", response.getName());
+        assertEquals("new@example.com", response.getEmail());
     }
 
     @Test
-    void updateUser_userRecord_doesNotExist_throws_exception() {
+    void updateUser_userDoesNotExist_throwsNotFound() {
+        when(userDao.findById("ghost")).thenReturn(Optional.empty());
 
-        UserUpdateRequest userUpdateRequest = new UserUpdateRequest();
-        userUpdateRequest.setId(randomUUID().toString());
-        // WHEN
-        when(eventUserRepository.findById(userUpdateRequest.getId())).thenReturn(Optional.empty());
-        Assertions.assertThrows(ResponseStatusException.class, () -> userService.updateUser(userUpdateRequest));
-        // THEN
-        try {
-            verify(eventUserRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the username is null. - " + error);
-        }
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.updateUser(new UserUpdateRequest("ghost", "Name", "email@example.com"))
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(userDao, never()).save(any());
     }
+
     /** ------------------------------------------------------------------------
      *  UserService.deleteUser
      *  ------------------------------------------------------------------------ **/
+
     @Test
-    void deleteUser() {
+    void deleteUser_emptyId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.deleteUser("")
+        );
 
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().get());
-        createUserRequest.setEmail(mockNeat.emails().get());
-
-        UserResponse userResponse = userService.createUser(createUserRequest);
-        when(eventUserRepository.existsById(userResponse.getId())).thenReturn(true);
-
-        userService.deleteUser(userResponse.getId());
-        verify(eventUserRepository).deleteById(userResponse.getId());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(userDao, never()).deleteById(any());
     }
 
     @Test
-    void deleteUser_userId_IsEmpty_throws_exception() {
+    void deleteUser_userDoesNotExist_throwsNotFound() {
+        String id = UUID.randomUUID().toString();
+        when(userDao.existsById(id)).thenReturn(false);
 
-        String eventId = "";
-        when(eventUserRepository.findById(eventId)).thenReturn(Optional.empty());
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> userService.deleteUser(eventId));
-        // THEN
-        try {
-            verify(eventUserRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.deleteUser(id)
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(userDao, never()).deleteById(any());
     }
 
     @Test
-    void deleteUser_userId_doesNotExist_throws_exception() {
+    void deleteUser_userExists_callsDeleteById() {
+        String id = UUID.randomUUID().toString();
+        when(userDao.existsById(id)).thenReturn(true);
 
-        String eventId = randomUUID().toString();
-        when(eventUserRepository.existsById(eventId)).thenReturn(false);
-        // WHEN
-        Assertions.assertThrows(ResponseStatusException.class, () -> userService.deleteUser(eventId));
-        // THEN
-        try {
-            verify(eventUserRepository, never()).save(Matchers.any());
-        } catch(MockitoAssertionError error) {
-            throw new MockitoAssertionError("There should not be a call to .save() if the event is not found in the database. - " + error);
-        }
+        userService.deleteUser(id);
+
+        verify(userDao).deleteById(id);
     }
-
-
 }
