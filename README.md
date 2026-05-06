@@ -10,14 +10,14 @@ At its core, the platform is built to eliminate friction and build trust through
 
 ## Architecture
 
+### Current State
+
 ```mermaid
 flowchart TD
     A[Frontend\nReact + Vite\nDeployed: AWS S3 + CloudFront] -->|REST / Axios| B[Application\nSpring Boot 3 · Java 21]
 
     B -->|Caffeine\nin-memory cache| B
-    B -->|REST via\nLambdaServiceClient| C[ServiceLambda\nAWS Lambda]
-    C -->|Redis / Jedis\ncache| C
-    C -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
+    B -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
 
     B -->|Metrics| E[Micrometer]
     E --> F[Prometheus]
@@ -25,8 +25,40 @@ flowchart TD
 
     style A fill:#fef3c7,stroke:#d97706
     style B fill:#dbeafe,stroke:#3b82f6
-    style C fill:#dcfce7,stroke:#22c55e
     style D fill:#fef9c3,stroke:#eab308
+    style E fill:#f3e8ff,stroke:#a855f7
+    style F fill:#f3e8ff,stroke:#a855f7
+    style G fill:#f3e8ff,stroke:#a855f7
+```
+
+### Target State (Phase 3 & 4)
+
+```mermaid
+flowchart TD
+    A[Frontend\nReact + Vite\nDeployed: AWS S3 + CloudFront] -->|REST / Axios| B[Application\nSpring Boot 3 · Java 21]
+
+    B -->|Caffeine\nin-memory cache| B
+    B -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
+    B -->|REST API| SF[Salesforce\nSystem of Record]
+    SF -->|Data Cloud| DC[Salesforce Data Cloud\n360° Donor View]
+    DC -->|Agentforce| AI[AI Impact\nUpdate Agent]
+
+    ST[Stripe\nWebhook] -->|Event| L[AWS Lambda\nPayment Handler]
+    L --> D
+    L --> SF
+
+    B -->|Metrics| E[Micrometer]
+    E --> F[Prometheus]
+    E --> G[AWS CloudWatch]
+
+    style A fill:#fef3c7,stroke:#d97706
+    style B fill:#dbeafe,stroke:#3b82f6
+    style D fill:#fef9c3,stroke:#eab308
+    style SF fill:#dbeafe,stroke:#0070d2
+    style DC fill:#dbeafe,stroke:#0070d2
+    style AI fill:#dbeafe,stroke:#0070d2
+    style ST fill:#dcfce7,stroke:#22c55e
+    style L fill:#dcfce7,stroke:#22c55e
     style E fill:#f3e8ff,stroke:#a855f7
     style F fill:#f3e8ff,stroke:#a855f7
     style G fill:#f3e8ff,stroke:#a855f7
@@ -48,10 +80,10 @@ This project demonstrates how a modern, cloud-native application can seamlessly 
 
 | Module | Responsibility |
 |---|---|
-| `Application` | Core Spring Boot API. Handles routing, request validation, Caffeine caching, and observability. |
-| `ServiceLambda` | AWS Lambda functions handling event persistence via DynamoDB. Utilizes Redis/Jedis for caching. |
-| `ServiceLambdaModel` | Shared domain models and DTOs ensuring consistency across service boundaries. |
-| `ServiceLambdaJavaClient` | Dedicated Java client used by the Spring Boot application to interface with the Lambda layer. |
+| `Application` | Core Spring Boot API. Handles routing, request validation, Caffeine caching, and observability. Connects directly to DynamoDB via AWS SDK v2 Enhanced Client. |
+| `ServiceLambda` | Reserved for Phase 4 — will house the Stripe payment webhook handler. Processes incoming Stripe events asynchronously and writes donation records to DynamoDB and Salesforce. |
+| `ServiceLambdaModel` | Shared domain models used across the Lambda boundary. Will be slimmed down to webhook-specific DTOs in Phase 4. |
+| `ServiceLambdaJavaClient` | Being removed in Phase 1 completion. The Spring Boot app no longer routes through a Lambda proxy for persistence. |
 | `Frontend` | React + Vite SPA. Component-based UI consuming the Spring Boot REST API via Axios. |
 | `IntegrationTests` | Cross-module integration test suites backed by Testcontainers. |
 | `Utilities` | Shared helper functions and build configurations used across the project. |
@@ -109,20 +141,14 @@ Output is written to `Frontend/dist/` and can be deployed to any static host (AW
 
 ### Local Development
 
-For local development, the Application module runs against a Dockerized DynamoDB instance. The ServiceLambda module requires a deployed AWS environment and is not emulated locally.
-
 **Prerequisites:**
 - Java 21
 - Gradle 8.7+
 - Docker Desktop (or equivalent container runtime)
 
-**Step 1 — Start local infrastructure**
+**Step 1 — Start local DynamoDB**
 
 ```bash
-# Start Redis (redis-stack image) on port 6379
-./runLocalRedis.sh
-
-# Start local DynamoDB on port 8000
 ./local-dynamodb.sh
 ```
 
@@ -140,33 +166,9 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 
 ### Building for Deployment
 
-Build the full project:
-
 ```bash
 ./gradlew build
 ```
-
-Build only the Lambda service artifact (produces `ServiceLambda.zip`):
-
-```bash
-./gradlew :ServiceLambda:build
-```
-
-### Deploying to AWS
-
-Before deploying, configure your environment variables:
-
-```bash
-source ./setupEnvironment.sh
-```
-
-Deploy the Lambda service stack to the development environment:
-
-```bash
-./deployDev.sh
-```
-
-This script builds the ServiceLambda artifact, packages it via CloudFormation, and deploys it to AWS Lambda using the stack defined in `LambdaService-template.yml`. Requires AWS CLI configured with appropriate IAM permissions.
 
 ---
 
@@ -186,21 +188,54 @@ This script builds the ServiceLambda artifact, packages it via CloudFormation, a
 
 | Phase | Focus | Status |
 |---|---|---|
-| **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21 upgrade, multi-module Gradle, Docker dev infra, React+Vite frontend | ✅ In Progress |
-| **Phase 2 — Feature Completion** | Event lifecycle, JWT auth / Spring Security, campaign linking, frontend auth flow | Planned |
-| **Phase 3 — Platform Enhancements** | Donations, ticketing, notifications (SES/SNS), donor dashboard, campaign management UI | Planned |
-| **Phase 4 — Production Hardening** | CI/CD pipeline, S3+CloudFront deploy, E2E tests, rate limiting, API gateway | Planned |
+| **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling, React + Vite frontend | ✅ Complete |
+| **Phase 2 — Domain Rename & Model Cleanup** | Rename capstone entities to platform domain, eliminate duplicate models, add Bean Validation, proper date types | 🔄 In Progress |
+| **Phase 3 — Feature Completion** | Campaign + event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
+| **Phase 4 — Platform Enhancements** | Stripe donations, Lambda webhook handler, impact reporting, donor dashboard, Salesforce Data Cloud + Agentforce | Planned |
+| **Phase 5 — Production Hardening** | CI/CD pipeline, S3 + CloudFront deploy, E2E tests, rate limiting, API Gateway | Planned |
 
-### Phase 1 Detail — Architecture Stabilization
+### Phase 1 — Architecture Stabilization ✅
 
-Completed:
-
-- Spring Boot 3.2.5, Java 21, Gradle 8.7, AWS SDK v2 migration
+- Spring Boot 3.2.5, Java 21, Gradle 8.7 upgrade
+- AWS SDK v2 migration across all modules
+- Direct DynamoDB access via Enhanced Client (removed Lambda proxy layer)
 - Multi-module Gradle structure established
-- Docker-based local dev infrastructure validated (Redis, DynamoDB)
+- Docker-based local DynamoDB dev infrastructure
 - Frontend migrated from Webpack 4 / vanilla JS to React + Vite
+- Global exception handling with `@RestControllerAdvice`
 
-Remaining:
+### Phase 2 — Domain Rename & Model Cleanup 🔄
 
-- Complete repository layer migration to AWS SDK v2 Enhanced Client
-- Finalize standard DTOs and global exception handling
+- Rename `Customer` → `Attendee`; clarify `User` / `Organizer` / `Donor` roles
+- Eliminate duplicate models between `Application` and `ServiceLambdaModel`
+- Replace broken Spring Data DynamoDB repos with Enhanced Client DAOs
+- Add `@Valid` + `@NotBlank` / `@NotNull` to all request DTOs
+- Migrate `date` fields from `String` to `LocalDate`
+- Migrate `CacheStore` from Guava to Caffeine; unify to a single typed cache
+- Remove `ServiceLambdaJavaClient` from Application dependencies
+
+### Phase 3 — Feature Completion
+
+- `Campaign` entity with goal, timeline, and status lifecycle (`DRAFT → ACTIVE → CLOSED`)
+- `FundraisingEvent` linked to a Campaign
+- Volunteer RSVP flow — attendees can commit time, not just money
+- JWT auth / Spring Security — register, login, role-based access (`ORGANIZER`, `DONOR`)
+- Salesforce REST API integration — sync users, campaigns, and donations as they are created
+- Frontend auth flow — login, register, protected routes, Axios interceptors
+
+### Phase 4 — Platform Enhancements
+
+- `Donation` entity backed by Stripe PaymentIntent API
+- AWS Lambda Stripe webhook handler — processes payment events asynchronously
+- Structured impact reporting — organizers post updates; donors see their contribution's effect
+- Donor dashboard — giving history, volunteer hours, campaigns followed
+- Salesforce Data Cloud unification — 360° view of community engagement per organizer
+- Agentforce agent — auto-drafts Impact Update posts from real-time campaign data
+
+### Phase 5 — Production Hardening
+
+- GitHub Actions CI/CD — build, test, deploy on merge to main
+- AWS S3 + CloudFront for frontend hosting
+- API Gateway — rate limiting, CORS, auth header validation
+- Playwright or Cypress E2E tests covering the critical donor flow
+- CloudWatch dashboards wired via Micrometer for key platform metrics
