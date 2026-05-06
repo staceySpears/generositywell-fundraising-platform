@@ -2,10 +2,9 @@
 
 ## Overview
 
-GenerosityWell is a nonprofit fundraising and event management platform designed to connect donors, organizers, and communities through structured campaigns and events.
+GenerosityWell is a **hyperlocal, community-first** fundraising platform designed to empower informal neighborhood groups, local schools, and grassroots nonprofits. Unlike traditional SaaS tools that treat giving time and giving money as separate workflows, GenerosityWell provides a unified hub for **volunteer and donor coordination**, allowing communities to track both financial and sweat-equity contributions in one place. 
 
-This project is a full-stack refactor of an original academic capstone, evolving it from a tightly coupled proof-of-concept into a cloud-hosted, service-oriented architecture leveraging AWS managed services. The backend is the primary focus — production-ready, observable, and cloud-native. The frontend has been modernized in parallel from a Webpack 4 / vanilla JS static site into a React + Vite SPA that cleanly consumes the Spring Boot REST API.
-
+At its core, the platform is built to eliminate friction and build trust through radical **campaign transparency**. By closing the loop with structured impact reporting, GenerosityWell ensures that every contributor sees exactly how their hours or dollars drove real-world change.
 ---
 
 ## Architecture
@@ -36,13 +35,11 @@ flowchart TD
 
 ## Purpose of the Refactor
 
-The original implementation functioned as a foundational proof-of-concept. This architectural overhaul focuses on:
+his project demonstrates how a modern, cloud-native application can seamlessly integrate with enterprise CRM systems to solve complex business problems. A community platform requires a lightweight, low-friction experience for its end users, but organizers still need robust, enterprise-grade tools to manage the back office. GenerosityWell bridges this gap by separating the public-facing transaction layer from the secure management layer:
 
-- **Modernizing the Tech Stack:** Migrated to Spring Boot 3.2.5, Java 21, Gradle 8.7, and AWS SDK v2. Frontend migrated from Webpack 4 / vanilla JS to React 18 + Vite.
-- - **Service Boundaries:** Multi-module Gradle project strictly enforcing separation between the API layer, shared client libraries, serverless functions, and the frontend.
-  - - **Two-Tier Caching:** In-memory Caffeine caching at the application layer and Redis via Jedis at the Lambda layer.
-    - - **Production Observability:** Micrometer, Prometheus, and AWS CloudWatch integrated for metric export and application monitoring.
-      - - **Modern Frontend:** React SPA with client-side routing, a shared API service layer (Axios), and component-based UI replacing the previous multi-HTML / per-page JS pattern.
+* **The Public Interface (Java / Spring Boot / AWS):** A robust, observable API layer and a modern React SPA handle the hyperlocal community experience—processing low-latency Stripe donations, capturing volunteer RSVPs, and displaying public impact reports.
+* **The System of Record (Salesforce Integration):** Rather than rebuilding generic CRM features from scratch, the platform syncs all transactional and user data directly into Salesforce via REST API. Salesforce serves as the single source of truth where organizers manage donor relationships and track campaign health.
+* **AI-Driven Transparency (Roadmap - Data Cloud & Agentforce):** Future phases will unify donation data in Salesforce Data Cloud to create a 360-degree view of community engagement. This foundation will enable a custom Agentforce agent to automatically draft and propose "Impact Updates" based on real-time campaign data, fulfilling the platform's core mission of transparency with zero administrative overhead.
        
         - ---
 
