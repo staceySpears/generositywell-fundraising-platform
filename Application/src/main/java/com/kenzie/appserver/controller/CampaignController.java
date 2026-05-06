@@ -3,6 +3,7 @@ package com.kenzie.appserver.controller;
 import com.kenzie.appserver.controller.model.CampaignResponse;
 import com.kenzie.appserver.controller.model.CampaignUpdateRequest;
 import com.kenzie.appserver.controller.model.CreateCampaignRequest;
+import com.kenzie.appserver.controller.model.DonationRequest;
 import com.kenzie.appserver.service.CampaignService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,22 @@ public class CampaignController {
     @PutMapping("/{campaignId}")
     public ResponseEntity<CampaignResponse> updateCampaign(@Valid @RequestBody CampaignUpdateRequest request) {
         CampaignResponse response = campaignService.updateCampaign(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{campaignId}/donate")
+    public ResponseEntity<CampaignResponse> donate(
+            @PathVariable("campaignId") String campaignId,
+            @Valid @RequestBody DonationRequest request) {
+        CampaignResponse response = campaignService.addDonation(campaignId, request.getAmount());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{campaignId}/close")
+    public ResponseEntity<CampaignResponse> closeCampaign(
+            @PathVariable("campaignId") String campaignId,
+            @RequestParam("userId") String userId) {
+        CampaignResponse response = campaignService.closeCampaign(campaignId, userId);
         return ResponseEntity.ok(response);
     }
 
