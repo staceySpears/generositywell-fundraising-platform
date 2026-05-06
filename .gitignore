@@ -27,3 +27,9 @@ bin
 /aws.xml
 
 lambda-service-development.yml
+
+# macOS
+.DS_Store
+
+# Claude Code worktrees and session data
+.claude/
