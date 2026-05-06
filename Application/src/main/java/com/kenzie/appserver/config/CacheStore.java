@@ -1,7 +1,7 @@
 package com.kenzie.appserver.config;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kenzie.appserver.controller.model.EventResponse;
 import com.kenzie.appserver.repositories.model.EventRecord;
 
@@ -13,9 +13,8 @@ public class CacheStore {
     private final Cache<String, Optional<EventRecord>> cache;
 
     public CacheStore(int expiry, TimeUnit timeUnit) {
-        this.cache = CacheBuilder.newBuilder()
+        this.cache = Caffeine.newBuilder()
                 .expireAfterWrite(expiry, timeUnit)
-                .concurrencyLevel(Runtime.getRuntime().availableProcessors())
                 .build();
     }
 
