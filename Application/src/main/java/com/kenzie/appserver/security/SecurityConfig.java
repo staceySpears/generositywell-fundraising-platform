@@ -34,6 +34,8 @@ public class SecurityConfig {
                         // registration and login are always open
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        // Stripe webhook — authenticated by signature, not JWT
+                        .requestMatchers("/webhooks/stripe").permitAll()
                         // Swagger UI for local dev
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // everything else requires a valid JWT

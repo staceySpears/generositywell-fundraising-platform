@@ -4,7 +4,10 @@ import com.kenzie.appserver.controller.model.CampaignResponse;
 import com.kenzie.appserver.controller.model.CampaignUpdateRequest;
 import com.kenzie.appserver.controller.model.CreateCampaignRequest;
 import com.kenzie.appserver.controller.model.DonationRequest;
+import com.kenzie.appserver.controller.model.PaymentIntentRequest;
+import com.kenzie.appserver.controller.model.PaymentIntentResponse;
 import com.kenzie.appserver.service.CampaignService;
+import com.kenzie.appserver.service.StripeService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,9 +21,11 @@ import java.util.List;
 public class CampaignController {
 
     private final CampaignService campaignService;
+    private final StripeService stripeService;
 
-    CampaignController(CampaignService campaignService) {
+    CampaignController(CampaignService campaignService, StripeService stripeService) {
         this.campaignService = campaignService;
+        this.stripeService = stripeService;
     }
 
     @GetMapping("/{id}")
@@ -44,6 +49,15 @@ public class CampaignController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{campaignId}/payment-intent")
+    public ResponseEntity<PaymentIntentResponse> createPaymentIntent(
+            @PathVariable("campaignId") String campaignId,
+            @Valid @RequestBody PaymentIntentRequest request) {
+        PaymentIntentResponse response = stripeService.createPaymentIntent(campaignId, request.getAmount());
+        return ResponseEntity.ok(response);
+    }
+
+    // Direct donation path — used for testing and non-card flows; webhook is the production path
     @PostMapping("/{campaignId}/donate")
     public ResponseEntity<CampaignResponse> donate(
             @PathVariable("campaignId") String campaignId,

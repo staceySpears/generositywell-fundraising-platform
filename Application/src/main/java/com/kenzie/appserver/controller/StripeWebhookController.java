@@ -1,0 +1,67 @@
+package com.kenzie.appserver.controller;
+
+import com.kenzie.appserver.service.CampaignService;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeObject;
+import com.stripe.net.Webhook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/webhooks")
+public class StripeWebhookController {
+
+    private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
+
+    private final CampaignService campaignService;
+    private final String webhookSecret;
+
+    public StripeWebhookController(
+            CampaignService campaignService,
+            @Value("${stripe.webhook-secret}") String webhookSecret) {
+        this.campaignService = campaignService;
+        this.webhookSecret = webhookSecret;
+    }
+
+    // Raw bytes required — Stripe signature verification fails if Spring parses the body first
+    @PostMapping(value = "/stripe", consumes = "application/json")
+    public ResponseEntity<String> handleWebhook(
+            @RequestBody byte[] payload,
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+
+        Event event;
+        try {
+            event = Webhook.constructEvent(new String(payload), sigHeader, webhookSecret);
+        } catch (SignatureVerificationException e) {
+            log.warn("Invalid Stripe webhook signature");
+            return ResponseEntity.badRequest().body("Invalid signature");
+        }
+
+        if ("payment_intent.succeeded".equals(event.getType())) {
+            Optional<StripeObject> stripeObject = event.getDataObjectDeserializer().getObject();
+            if (stripeObject.isPresent() && stripeObject.get() instanceof PaymentIntent intent) {
+                String campaignId = intent.getMetadata().get("campaignId");
+                long amount = intent.getAmount();
+
+                if (campaignId != null) {
+                    try {
+                        campaignService.addDonation(campaignId, amount);
+                        log.info("Donation recorded: campaign={} amount={}", campaignId, amount);
+                    } catch (Exception e) {
+                        // Log but return 200 — Stripe retries on non-2xx, and the payment already succeeded
+                        log.error("Failed to record donation for campaign {}: {}", campaignId, e.getMessage());
+                    }
+                }
+            }
+        }
+
+        return ResponseEntity.ok("received");
+    }
+}
