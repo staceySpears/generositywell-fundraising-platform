@@ -2,7 +2,7 @@ package com.kenzie.appserver.service.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 
 public class Customer {
 

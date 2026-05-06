@@ -3,81 +3,68 @@ package com.kenzie.appserver.service;
 import com.kenzie.appserver.controller.model.CreateUserRequest;
 import com.kenzie.appserver.controller.model.UserResponse;
 import com.kenzie.appserver.controller.model.UserUpdateRequest;
-import com.kenzie.appserver.repositories.EventRepository;
-import com.kenzie.appserver.repositories.EventUserRepository;
+import com.kenzie.appserver.repositories.UserDao;
 import com.kenzie.appserver.repositories.model.UserRecord;
-import com.kenzie.capstone.service.client.LambdaServiceClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class UserService {
-    private EventUserRepository eventUserRepository;
-    private LambdaServiceClient lambdaServiceClient;
 
-    public UserService(EventUserRepository eventUserRepository) {
-        this.eventUserRepository = eventUserRepository;
+    private final UserDao userDao;
+
+    public UserService(UserDao userDao) {
+        this.userDao = userDao;
     }
 
-    public UserResponse getUserById(String userId){
-
-        Optional<UserRecord> userRecord = eventUserRepository.findById(userId);
-        return userRecord.map(this::recordToResponse).orElse(null);
+    public UserResponse getUserById(String userId) {
+        return userDao.findById(userId)
+                .map(this::recordToResponse)
+                .orElse(null);
     }
 
-    public UserResponse createUser(CreateUserRequest createUserRequest){
-
-        UserRecord userRecord = new UserRecord();
-
-        if (createUserRequest.getName() != null && createUserRequest.getEmail() != null){
-            userRecord.setId(UUID.randomUUID().toString());
-            userRecord.setName(createUserRequest.getName());
-            userRecord.setEmail(createUserRequest.getEmail());
-            eventUserRepository.save(userRecord);
-
-            return recordToResponse(userRecord);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid User Request, either name or email is absent");
+    public UserResponse createUser(CreateUserRequest request) {
+        if (request.getName() == null || request.getEmail() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name and email are required");
         }
+        UserRecord record = new UserRecord();
+        record.setId(UUID.randomUUID().toString());
+        record.setName(request.getName());
+        record.setEmail(request.getEmail());
+        userDao.save(record);
+
+        return recordToResponse(record);
     }
 
-    public void deleteUser(String userid){
-        if (userid.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Id is Empty");
+    public void deleteUser(String userId) {
+        if (userId.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be empty");
         }
-        if (!eventUserRepository.existsById(userid)){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Id does not exist in the repository");
+        if (!userDao.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        eventUserRepository.deleteById(userid);
+        userDao.deleteById(userId);
     }
 
-    public UserResponse updateUser(UserUpdateRequest userUpdateRequest){
-        Optional<UserRecord> userExists = eventUserRepository.findById(userUpdateRequest.getId());
-        if (userExists.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User Not Found, does not exist in repository");
-        }
-        UserRecord userRecord = userExists.get();
-        userRecord.setName(userUpdateRequest.getName());
-        userRecord.setEmail(userUpdateRequest.getEmail());
-        eventUserRepository.save(userRecord);
+    public UserResponse updateUser(UserUpdateRequest request) {
+        UserRecord record = userDao.findById(request.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        return recordToResponse(userRecord);
+        record.setName(request.getName());
+        record.setEmail(request.getEmail());
+        userDao.save(record);
+
+        return recordToResponse(record);
     }
 
-    public UserResponse recordToResponse(UserRecord userRecord){
-
-        UserResponse userResponse = new UserResponse();
-        userResponse.setId(userRecord.getId());
-        userResponse.setName(userRecord.getName());
-        userResponse.setEmail(userRecord.getEmail());
-
-        return userResponse;
+    private UserResponse recordToResponse(UserRecord record) {
+        UserResponse response = new UserResponse();
+        response.setId(record.getId());
+        response.setName(record.getName());
+        response.setEmail(record.getEmail());
+        return response;
     }
-
-
-
 }

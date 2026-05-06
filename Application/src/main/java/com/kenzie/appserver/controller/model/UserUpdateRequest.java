@@ -3,7 +3,7 @@ package com.kenzie.appserver.controller.model;//package com.kenzie.appserver.con
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kenzie.appserver.service.model.User;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 public class UserUpdateRequest {

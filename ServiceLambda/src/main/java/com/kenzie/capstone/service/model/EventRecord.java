@@ -3,8 +3,8 @@ package com.kenzie.capstone.service.model;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import com.kenzie.appserver.service.model.Customer;
-import com.kenzie.appserver.service.model.User;
+import com.kenzie.capstone.service.model.Customer;
+import com.kenzie.capstone.service.model.User;
 
 import java.util.List;
 
@@ -83,7 +83,4 @@ public class EventRecord {
     public String toString() {
         return super.toString();
     }
-}
-
-
 }
