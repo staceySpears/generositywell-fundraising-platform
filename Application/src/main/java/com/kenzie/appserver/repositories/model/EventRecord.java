@@ -3,7 +3,7 @@ package com.kenzie.appserver.repositories.model;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import com.kenzie.appserver.service.model.Customer;
+import com.kenzie.appserver.service.model.Attendee;
 import com.kenzie.appserver.service.model.User;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class EventRecord {
     private String name;
     private String date;
     private User user;
-    private List<Customer> listOfAttending;
+    private List<Attendee> listOfAttending;
     private String address;
     private String description;
 
@@ -54,12 +54,12 @@ public class EventRecord {
         this.user = user;
     }
 
-    @DynamoDbConvertedBy(CustomerTypeConverter.class)
-    public List<Customer> getListOfAttending() {
+    @DynamoDbConvertedBy(AttendeeTypeConverter.class)
+    public List<Attendee> getListOfAttending() {
         return listOfAttending;
     }
 
-    public void setListOfAttending(List<Customer> listOfAttending) {
+    public void setListOfAttending(List<Attendee> listOfAttending) {
         this.listOfAttending = listOfAttending;
     }
 

@@ -2,7 +2,7 @@ package com.kenzie.appserver.controller.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kenzie.appserver.service.model.Customer;
+import com.kenzie.appserver.service.model.Attendee;
 import com.kenzie.appserver.service.model.User;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class EventResponse {
     private User user;
 
     @JsonProperty("listOfAttending")
-    private List<Customer> listOfAttending;
+    private List<Attendee> listOfAttending;
 
     @JsonProperty("address")
     private String address;
@@ -63,11 +63,11 @@ public class EventResponse {
         this.user = user;
     }
 
-    public List<Customer> getListOfAttending() {
+    public List<Attendee> getListOfAttending() {
         return listOfAttending;
     }
 
-    public void setListOfAttending(List<Customer> listOfAttending) {
+    public void setListOfAttending(List<Attendee> listOfAttending) {
         this.listOfAttending = listOfAttending;
     }
 

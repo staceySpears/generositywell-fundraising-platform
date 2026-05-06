@@ -6,7 +6,7 @@ import com.kenzie.appserver.controller.model.EventResponse;
 import com.kenzie.appserver.controller.model.EventUpdateRequest;
 import com.kenzie.appserver.repositories.EventDao;
 import com.kenzie.appserver.repositories.model.EventRecord;
-import com.kenzie.appserver.service.model.Customer;
+import com.kenzie.appserver.service.model.Attendee;
 import com.kenzie.appserver.service.model.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -230,8 +230,8 @@ class EventServiceTest {
     @Test
     void getAllEvents_returnsMappedResponseList() {
         User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
-        List<Customer> attendees = List.of(
-                new Customer(UUID.randomUUID().toString(), "Alex", "alex@example.com")
+        List<Attendee> attendees = List.of(
+                new Attendee(UUID.randomUUID().toString(), "Alex", "alex@example.com")
         );
 
         EventRecord e1 = eventRecord("event-a");

@@ -1,22 +1,18 @@
 package com.kenzie.appserver.service.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.validation.constraints.NotEmpty;
-
-public class Customer {
+public class Attendee {
 
     public String id;
     public String name;
     public String email;
 
-    public Customer(String id, String name, String email){
+    public Attendee(String id, String name, String email) {
         this.id = id;
         this.name = name;
         this.email = email;
     }
 
-    public Customer(){}
+    public Attendee() {}
 
     public String getId() {
         return id;
@@ -30,15 +26,15 @@ public class Customer {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getEmail() {
         return email;
     }
 
-    public void setName(String name){
-        this.name = name;
-    }
-
-    public void setEmail(String email){
+    public void setEmail(String email) {
         this.email = email;
     }
 }

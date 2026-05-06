@@ -1,6 +1,6 @@
 package com.kenzie.appserver.repositories.model;
 
-import com.kenzie.appserver.service.model.Customer;
+import com.kenzie.appserver.service.model.Attendee;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -9,36 +9,36 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CustomerTypeConverter implements AttributeConverter<List<Customer>> {
+public class AttendeeTypeConverter implements AttributeConverter<List<Attendee>> {
 
     @Override
-    public AttributeValue transformFrom(List<Customer> input) {
+    public AttributeValue transformFrom(List<Attendee> input) {
         if (input == null) {
             return AttributeValue.builder().nul(true).build();
         }
         List<AttributeValue> items = input.stream()
-                .map(n -> AttributeValue.builder()
-                        .s(String.format("%s x %s x %s", n.getId(), n.getName(), n.getEmail()))
+                .map(a -> AttributeValue.builder()
+                        .s(String.format("%s x %s x %s", a.getId(), a.getName(), a.getEmail()))
                         .build())
                 .collect(Collectors.toList());
         return AttributeValue.builder().l(items).build();
     }
 
     @Override
-    public List<Customer> transformTo(AttributeValue input) {
+    public List<Attendee> transformTo(AttributeValue input) {
         return input.l().stream().map(av -> {
-            Customer customer = new Customer();
+            Attendee attendee = new Attendee();
             String[] data = av.s().split("x");
-            customer.setId(data[0].trim());
-            customer.setName(data[1].trim());
-            customer.setEmail(data[2].trim());
-            return customer;
+            attendee.setId(data[0].trim());
+            attendee.setName(data[1].trim());
+            attendee.setEmail(data[2].trim());
+            return attendee;
         }).collect(Collectors.toList());
     }
 
     @Override
-    public EnhancedType<List<Customer>> type() {
-        return EnhancedType.listOf(Customer.class);
+    public EnhancedType<List<Attendee>> type() {
+        return EnhancedType.listOf(Attendee.class);
     }
 
     @Override
