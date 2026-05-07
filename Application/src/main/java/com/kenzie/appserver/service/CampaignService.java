@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Business logic for campaign lifecycle: creation, updates, donations, and closure. */
 @Service
 public class CampaignService {
 
@@ -29,6 +30,13 @@ public class CampaignService {
         this.salesforceService = salesforceService;
     }
 
+    /**
+     * Returns the campaign with the given ID, or {@code null} if not found.
+     * Results are served from the in-memory cache when available.
+     *
+     * @param id the campaign ID
+     * @return the campaign response, or {@code null}
+     */
     public CampaignResponse getCampaignById(String id) {
         Optional<CampaignRecord> cached = cache.get(id);
         if (cached != null) {
@@ -39,6 +47,13 @@ public class CampaignService {
         return record.map(this::recordToResponse).orElse(null);
     }
 
+    /**
+     * Creates a new campaign with ACTIVE status and zero current amount.
+     * Triggers an async Salesforce Campaign sync after the local record is saved.
+     *
+     * @param request the creation request
+     * @return the created campaign response
+     */
     public CampaignResponse addNewCampaign(CreateCampaignRequest request) {
         CampaignRecord record = new CampaignRecord();
         record.setId(UUID.randomUUID().toString());
@@ -59,6 +74,14 @@ public class CampaignService {
         return recordToResponse(record);
     }
 
+    /**
+     * Updates a campaign's mutable fields.
+     * Only the original creator (matched by the user ID in the request) may update.
+     * Throws 404 if not found, 403 if the caller is not the owner, 409 if the campaign is closed.
+     *
+     * @param request the update request
+     * @return the updated campaign response
+     */
     public CampaignResponse updateCampaign(CampaignUpdateRequest request) {
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
@@ -85,6 +108,15 @@ public class CampaignService {
         return recordToResponse(record);
     }
 
+    /**
+     * Records a donation against a campaign and flips status to FUNDED when the goal is met.
+     * Throws 404 if the campaign does not exist, 409 if it is already closed.
+     * Triggers an async Salesforce Opportunity sync after saving.
+     *
+     * @param campaignId   the campaign to donate to
+     * @param amountInCents the donation amount in cents
+     * @return the updated campaign response
+     */
     public CampaignResponse addDonation(String campaignId, Long amountInCents) {
         CampaignRecord record = campaignDao.findById(campaignId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
@@ -107,6 +139,14 @@ public class CampaignService {
         return recordToResponse(record);
     }
 
+    /**
+     * Closes a campaign, preventing further donations.
+     * Only the original creator may close it. Throws 404 or 403 as appropriate.
+     *
+     * @param campaignId       the campaign to close
+     * @param requestingUserId the user ID from the authenticated JWT
+     * @return the updated campaign response with CLOSED status
+     */
     public CampaignResponse closeCampaign(String campaignId, String requestingUserId) {
         CampaignRecord record = campaignDao.findById(campaignId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
@@ -122,6 +162,12 @@ public class CampaignService {
         return recordToResponse(record);
     }
 
+    /**
+     * Permanently deletes a campaign and evicts it from the cache.
+     * Throws 400 on empty ID, 404 if not found.
+     *
+     * @param campaignId the campaign to delete
+     */
     public void deleteCampaign(String campaignId) {
         if (campaignId.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
@@ -133,6 +179,11 @@ public class CampaignService {
         cache.evict(campaignId);
     }
 
+    /**
+     * Returns all campaigns. Performs a full DynamoDB table scan — prefer filtered queries at scale.
+     *
+     * @return list of all campaign responses
+     */
     public List<CampaignResponse> getAllCampaigns() {
         return campaignDao.findAll().stream()
                 .map(this::recordToResponse)

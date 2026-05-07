@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
+/** Low-level HTTP client for the Salesforce REST API. Handles token injection and error mapping. */
 @Component
 public class SalesforceClient {
 
@@ -30,7 +31,14 @@ public class SalesforceClient {
         this.restClient = RestClient.create();
     }
 
-    // Creates a Salesforce record and returns the new SF ID
+    /**
+     * Creates a new sObject record in Salesforce and returns its ID.
+     * Throws {@link RuntimeException} if the API response indicates failure or returns null.
+     *
+     * @param sobjectType the Salesforce sObject API name (e.g. "Campaign", "Opportunity")
+     * @param fields      the field name-to-value map for the new record
+     * @return the Salesforce ID of the created record
+     */
     @SuppressWarnings("unchecked")
     public String create(String sobjectType, Map<String, Object> fields) {
         String url = instanceUrl + "/services/data/" + apiVersion + "/sobjects/" + sobjectType;
@@ -51,7 +59,13 @@ public class SalesforceClient {
         return (String) response.get("id");
     }
 
-    // Updates an existing Salesforce record by ID
+    /**
+     * Updates an existing sObject record in Salesforce by its ID.
+     *
+     * @param sobjectType the Salesforce sObject API name
+     * @param sfId        the Salesforce record ID to update
+     * @param fields      the fields to patch
+     */
     public void update(String sobjectType, String sfId, Map<String, Object> fields) {
         String url = instanceUrl + "/services/data/" + apiVersion + "/sobjects/" + sobjectType + "/" + sfId;
 

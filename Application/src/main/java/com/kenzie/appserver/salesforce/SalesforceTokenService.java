@@ -12,6 +12,10 @@ import org.springframework.web.client.RestClient;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Manages a cached Salesforce OAuth2 access token using the client credentials flow.
+ * The token is refreshed proactively 5 minutes before expiry to avoid mid-request failures.
+ */
 @Component
 public class SalesforceTokenService {
 
@@ -35,6 +39,12 @@ public class SalesforceTokenService {
         this.restClient = RestClient.create();
     }
 
+    /**
+     * Returns a valid Salesforce access token, refreshing it if it is expired or within
+     * 5 minutes of expiry. Thread-safe via {@code synchronized}.
+     *
+     * @return a bearer token string ready for use in an Authorization header
+     */
     public synchronized String getAccessToken() {
         if (cachedToken == null || Instant.now().isAfter(tokenExpiry.minusSeconds(300))) {
             refresh();

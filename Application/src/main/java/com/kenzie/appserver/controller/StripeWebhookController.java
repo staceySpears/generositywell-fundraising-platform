@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+/**
+ * Receives and processes Stripe webhook events.
+ * Authenticated by Stripe signature rather than JWT — the endpoint is public
+ * but rejects any request whose signature does not match the configured secret.
+ */
 @RestController
 @RequestMapping("/webhooks")
 public class StripeWebhookController {
@@ -30,7 +35,19 @@ public class StripeWebhookController {
         this.webhookSecret = webhookSecret;
     }
 
-    // Raw bytes required — Stripe signature verification fails if Spring parses the body first
+    /**
+     * {@code POST /webhooks/stripe} — handles incoming Stripe events.
+     * Currently processes {@code payment_intent.succeeded}: looks up the campaign ID
+     * from the PaymentIntent metadata and records the donation amount.
+     * Always returns 200 to Stripe (after signature validation) so Stripe does not
+     * retry on application-level errors — failures are logged instead.
+     * The raw request body must be passed through unmodified for signature verification
+     * to succeed.
+     *
+     * @param payload   the raw JSON body bytes
+     * @param sigHeader the {@code Stripe-Signature} header value
+     * @return 200 "received" on success, 400 on signature failure
+     */
     @PostMapping(value = "/stripe", consumes = "application/json")
     public ResponseEntity<String> handleWebhook(
             @RequestBody byte[] payload,

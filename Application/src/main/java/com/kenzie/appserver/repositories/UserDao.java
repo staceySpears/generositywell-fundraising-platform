@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import java.util.Map;
 import java.util.Optional;
 
-/** DAO for UserRecord persistence; replaces the legacy EventUserRepository. */
+/** DynamoDB persistence layer for {@link UserRecord}. */
 @Repository
 public class UserDao {
 
@@ -26,26 +26,55 @@ public class UserDao {
         this.userTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(UserRecord.class));
     }
 
+    /**
+     * Looks up a user by their partition key (ID).
+     *
+     * @param id the user ID
+     * @return an Optional containing the record, or empty if not found
+     */
     public Optional<UserRecord> findById(String id) {
         Key key = Key.builder().partitionValue(id).build();
         return Optional.ofNullable(userTable.getItem(key));
     }
 
+    /**
+     * Persists a user record (insert or full replace).
+     *
+     * @param record the record to save
+     * @return the saved record
+     */
     public UserRecord save(UserRecord record) {
         userTable.putItem(record);
         return record;
     }
 
+    /**
+     * Deletes the user with the given ID. No-op if the item does not exist.
+     *
+     * @param id the user ID to delete
+     */
     public void deleteById(String id) {
         Key key = Key.builder().partitionValue(id).build();
         userTable.deleteItem(key);
     }
 
+    /**
+     * Returns {@code true} if a user with the given ID exists in the table.
+     *
+     * @param id the user ID
+     * @return {@code true} if found
+     */
     public boolean existsById(String id) {
         return findById(id).isPresent();
     }
 
-    // Full scan filtered by email — replace with a GSI when table grows
+    /**
+     * Finds a user by email address via a filtered full table scan.
+     * This is O(n) — replace with a GSI-backed query when the table grows.
+     *
+     * @param email the email address to search for
+     * @return an Optional containing the matching user, or empty if not found
+     */
     public Optional<UserRecord> findByEmail(String email) {
         Expression filter = Expression.builder()
                 .expression("email = :email")

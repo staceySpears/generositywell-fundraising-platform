@@ -6,8 +6,18 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+/**
+ * DynamoDB AttributeConverter for {@link User}.
+ * Serialises a User as the String {@code "id x name x email"} stored in a DynamoDB S attribute.
+ */
 public class UserTypeConverter implements AttributeConverter<User> {
 
+    /**
+     * Converts a User to a DynamoDB String AttributeValue.
+     *
+     * @param input the User to serialise, or {@code null}
+     * @return a DynamoDB AttributeValue containing the serialised user
+     */
     @Override
     public AttributeValue transformFrom(User input) {
         if (input == null) {
@@ -18,6 +28,12 @@ public class UserTypeConverter implements AttributeConverter<User> {
         return AttributeValue.builder().s(value).build();
     }
 
+    /**
+     * Converts a DynamoDB String AttributeValue back to a User.
+     *
+     * @param input the DynamoDB AttributeValue
+     * @return the deserialised User
+     */
     @Override
     public User transformTo(AttributeValue input) {
         User user = new User();
@@ -31,11 +47,13 @@ public class UserTypeConverter implements AttributeConverter<User> {
         return user;
     }
 
+    /** @return the enhanced type descriptor for {@link User} */
     @Override
     public EnhancedType<User> type() {
         return EnhancedType.of(User.class);
     }
 
+    /** @return the DynamoDB attribute type (String) */
     @Override
     public AttributeValueType attributeValueType() {
         return AttributeValueType.S;

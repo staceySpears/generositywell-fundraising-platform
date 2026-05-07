@@ -2,6 +2,7 @@ package com.kenzie.appserver.controller.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/** Response body returned after a Stripe PaymentIntent is created. */
 public class PaymentIntentResponse {
 
     @JsonProperty("clientSecret")
@@ -19,7 +20,12 @@ public class PaymentIntentResponse {
         this.amount = amount;
     }
 
+    /** @return the client secret for front-end Stripe.js confirmation */
     public String getClientSecret() { return clientSecret; }
+
+    /** @return the Stripe PaymentIntent ID */
     public String getPaymentIntentId() { return paymentIntentId; }
+
+    /** @return the charge amount in cents */
     public Long getAmount() { return amount; }
 }

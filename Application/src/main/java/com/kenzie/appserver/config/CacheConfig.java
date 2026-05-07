@@ -8,9 +8,14 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
+/** Spring configuration that registers the {@link CacheStore} bean. */
 public class CacheConfig {
 
-    // Create a Cache here if needed
+    /**
+     * Campaign cache with a 3-minute write expiry.
+     *
+     * @return the CacheStore bean
+     */
     @Bean
     public CacheStore myCache() {
         return new CacheStore(180, TimeUnit.SECONDS);
