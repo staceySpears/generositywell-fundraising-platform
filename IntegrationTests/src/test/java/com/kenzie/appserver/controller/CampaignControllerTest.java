@@ -121,7 +121,7 @@ class CampaignControllerTest {
 
     @Test
     void updateCampaign_owner_isSuccessful() throws Exception {
-        CampaignResponse created = campaignService.addNewCampaign(buildCreateRequest());
+        CampaignResponse created = campaignService.addNewCampaign(buildCreateRequestOwnedBy(ownerUserId));
 
         CampaignUpdateRequest update = new CampaignUpdateRequest();
         update.setId(created.getId());
@@ -138,6 +138,27 @@ class CampaignControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(is(update.getName())))
                 .andExpect(jsonPath("$.goalAmount").value(is(300000)));
+    }
+
+    @Test
+    void updateCampaign_nonOwner_returnsForbidden() throws Exception {
+        CampaignResponse created = campaignService.addNewCampaign(buildCreateRequestOwnedBy(ownerUserId));
+
+        String nonOwnerToken = jwtUtil.generateToken(UUID.randomUUID().toString(), "other@test.com");
+
+        CampaignUpdateRequest update = new CampaignUpdateRequest();
+        update.setId(created.getId());
+        update.setName("Hijacked");
+        update.setDate(LocalDate.now().toString());
+        update.setDeadline(LocalDate.now().plusDays(60).toString());
+        update.setCategory("Education");
+        update.setUser(created.getUser());
+        update.setSupporters(new ArrayList<>());
+        update.setDescription("desc");
+        update.setGoalAmount(100000L);
+
+        campaignQueryUtility.campaignControllerClient.updateCampaign(update, nonOwnerToken)
+                .andExpect(status().isForbidden());
     }
 
     /** ------------------------------------------------------------------------
@@ -206,11 +227,7 @@ class CampaignControllerTest {
 
     @Test
     void closeCampaign_owner_isSuccessful() throws Exception {
-        // Build a campaign owned by the same user who holds ownerToken
-        User owner = new User(ownerUserId, "Campaign Owner", "owner@test.com");
-        CreateCampaignRequest request = buildCreateRequest();
-        request.setUser(owner);
-        CampaignResponse created = campaignService.addNewCampaign(request);
+        CampaignResponse created = campaignService.addNewCampaign(buildCreateRequest());
 
         campaignQueryUtility.campaignControllerClient.closeCampaign(created.getId(), ownerToken)
                 .andExpect(status().isOk())
@@ -222,7 +239,11 @@ class CampaignControllerTest {
     // -------------------------------------------------------------------------
 
     private CreateCampaignRequest buildCreateRequest() {
-        User user = new User(UUID.randomUUID().toString(), mockNeat.names().get(), mockNeat.emails().get());
+        return buildCreateRequestOwnedBy(ownerUserId);
+    }
+
+    private CreateCampaignRequest buildCreateRequestOwnedBy(String userId) {
+        User user = new User(userId, mockNeat.names().get(), mockNeat.emails().get());
 
         CreateCampaignRequest request = new CreateCampaignRequest();
         request.setName(mockNeat.names().first().get() + " Campaign");

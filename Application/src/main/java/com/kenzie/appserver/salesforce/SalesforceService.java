@@ -50,10 +50,12 @@ public class SalesforceService {
 
             String sfId = client.create("Campaign", fields);
 
-            // Store the SF ID back so donations can reference it
-            record.setSalesforceCampaignId(sfId);
-            campaignDao.save(record);
-            log.info("Campaign synced to Salesforce: local={} sf={}", record.getId(), sfId);
+            // Re-fetch before writing back to avoid overwriting concurrent updates (donations, status changes)
+            campaignDao.findById(record.getId()).ifPresentOrElse(latest -> {
+                latest.setSalesforceCampaignId(sfId);
+                campaignDao.save(latest);
+                log.info("Campaign synced to Salesforce: local={} sf={}", latest.getId(), sfId);
+            }, () -> log.warn("Skipping SF campaign ID persist; local campaign not found: {}", record.getId()));
 
         } catch (Exception e) {
             log.error("Failed to sync campaign {} to Salesforce: {}", record.getId(), e.getMessage());
@@ -74,6 +76,8 @@ public class SalesforceService {
 
             if (record.getSalesforceCampaignId() != null) {
                 fields.put("CampaignId", record.getSalesforceCampaignId());
+            } else {
+                log.warn("Donation Opportunity created without CampaignId — SF campaign not yet synced: local={}", record.getId());
             }
 
             String sfId = client.create("Opportunity", fields);

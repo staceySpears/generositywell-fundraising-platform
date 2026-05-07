@@ -59,11 +59,11 @@ public class CampaignService {
         return recordToResponse(record);
     }
 
-    public CampaignResponse updateCampaign(CampaignUpdateRequest request) {
+    public CampaignResponse updateCampaign(CampaignUpdateRequest request, String requestingUserId) {
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (!record.getUser().getId().equals(request.getUser().getId())) {
+        if (!record.getUser().getId().equals(requestingUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can update this campaign");
         }
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
