@@ -93,7 +93,7 @@ public class CampaignService {
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (!record.getUser().getId().equals(requestingUserId)) {
+        if (record.getUser() == null || !requestingUserId.equals(record.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can update this campaign");
         }
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
@@ -133,7 +133,12 @@ public class CampaignService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This campaign is no longer accepting donations");
         }
 
-        long newTotal = record.getCurrentAmount() + amountInCents;
+        if (amountInCents == null || amountInCents <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Donation amount must be a positive value");
+        }
+
+        long current = record.getCurrentAmount() != null ? record.getCurrentAmount() : 0L;
+        long newTotal = current + amountInCents;
         record.setCurrentAmount(newTotal);
 
         if (newTotal >= record.getGoalAmount() && CampaignStatus.ACTIVE.name().equals(record.getStatus())) {
@@ -161,7 +166,7 @@ public class CampaignService {
         CampaignRecord record = campaignDao.findById(campaignId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (!record.getUser().getId().equals(requestingUserId)) {
+        if (record.getUser() == null || !requestingUserId.equals(record.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can close this campaign");
         }
 
@@ -180,7 +185,7 @@ public class CampaignService {
      *         404 if not found
      */
     public void deleteCampaign(String campaignId) {
-        if (campaignId.isEmpty()) {
+        if (campaignId == null || campaignId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
         }
         if (!campaignDao.existsById(campaignId)) {

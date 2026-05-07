@@ -190,6 +190,48 @@ class CampaignServiceTest {
     }
 
     @Test
+    void addDonation_nullAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-null-amt");
+        when(campaignDao.findById("camp-null-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-null-amt", null)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addDonation_zeroAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-zero-amt");
+        when(campaignDao.findById("camp-zero-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-zero-amt", 0L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addDonation_negativeAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-neg-amt");
+        when(campaignDao.findById("camp-neg-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-neg-amt", -500L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
     void addDonation_closedCampaign_throwsConflict() {
         CampaignRecord record = campaignRecord("camp-7");
         record.setStatus(CampaignStatus.CLOSED.name());
@@ -330,6 +372,24 @@ class CampaignServiceTest {
     /** ------------------------------------------------------------------------
      *  CampaignService.deleteCampaign
      *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void deleteCampaign_nullId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.deleteCampaign(null)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void deleteCampaign_blankId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.deleteCampaign("   ")
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
 
     @Test
     void deleteCampaign_emptyId_throwsBadRequest() {
