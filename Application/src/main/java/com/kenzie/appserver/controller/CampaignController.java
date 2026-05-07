@@ -44,8 +44,10 @@ public class CampaignController {
     }
 
     @PutMapping("/{campaignId}")
-    public ResponseEntity<CampaignResponse> updateCampaign(@Valid @RequestBody CampaignUpdateRequest request) {
-        CampaignResponse response = campaignService.updateCampaign(request);
+    public ResponseEntity<CampaignResponse> updateCampaign(
+            @Valid @RequestBody CampaignUpdateRequest request,
+            Authentication authentication) {
+        CampaignResponse response = campaignService.updateCampaign(request, authentication.getName());
         return ResponseEntity.ok(response);
     }
 
