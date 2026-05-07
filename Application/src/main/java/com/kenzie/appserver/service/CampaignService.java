@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,9 +38,12 @@ public class CampaignService {
      *
      * @param id the campaign ID
      * @return the campaign response
-     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
+     * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank, 404 if not found
      */
     public CampaignResponse getCampaignById(String id) {
+        if (id == null || id.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
+        }
         Optional<CampaignRecord> cached = cache.get(id);
         if (cached != null) {
             return cached.map(this::recordToResponse)
@@ -57,9 +61,20 @@ public class CampaignService {
      *
      * @param request the creation request
      * @return the created campaign response
-     * @throws org.springframework.web.server.ResponseStatusException 400 if required fields are missing
+     * @throws org.springframework.web.server.ResponseStatusException 400 if name is blank,
+     *         goalAmount is null or non-positive, or user is null
      */
     public CampaignResponse addNewCampaign(CreateCampaignRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign name is required");
+        }
+        if (request.getGoalAmount() == null || request.getGoalAmount() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Goal amount must be a positive value");
+        }
+        if (request.getUser() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign must have an owner");
+        }
+
         CampaignRecord record = new CampaignRecord();
         record.setId(UUID.randomUUID().toString());
         record.setName(request.getName());
@@ -93,7 +108,7 @@ public class CampaignService {
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (record.getUser() == null || !requestingUserId.equals(record.getUser().getId())) {
+        if (record.getUser() == null || !Objects.equals(requestingUserId, record.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can update this campaign");
         }
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
@@ -120,12 +135,16 @@ public class CampaignService {
      * Triggers an async Salesforce Opportunity sync after saving.
      *
      * @param campaignId    the campaign to donate to
-     * @param amountInCents the donation amount in cents
+     * @param amountInCents the donation amount in cents (must be a positive value)
      * @return the updated campaign response
-     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
+     * @throws org.springframework.web.server.ResponseStatusException 400 if campaignId is blank
+     *         or amountInCents is null, zero, or negative; 404 if not found;
      *         409 if the campaign is already closed
      */
     public CampaignResponse addDonation(String campaignId, Long amountInCents) {
+        if (campaignId == null || campaignId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
+        }
         CampaignRecord record = campaignDao.findById(campaignId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
@@ -159,14 +178,17 @@ public class CampaignService {
      * @param campaignId       the campaign to close
      * @param requestingUserId the user ID from the authenticated JWT
      * @return the updated campaign response with CLOSED status
-     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
-     *         403 if the caller is not the owner
+     * @throws org.springframework.web.server.ResponseStatusException 400 if campaignId is blank,
+     *         404 if not found, 403 if the caller is not the owner
      */
     public CampaignResponse closeCampaign(String campaignId, String requestingUserId) {
+        if (campaignId == null || campaignId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
+        }
         CampaignRecord record = campaignDao.findById(campaignId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (record.getUser() == null || !requestingUserId.equals(record.getUser().getId())) {
+        if (record.getUser() == null || !Objects.equals(requestingUserId, record.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can close this campaign");
         }
 
