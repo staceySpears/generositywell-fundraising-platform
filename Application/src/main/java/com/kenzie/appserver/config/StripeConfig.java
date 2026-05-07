@@ -5,8 +5,10 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Initialises the Stripe SDK with the API key from application properties.
+ */
 @Configuration
-/** Initialises the Stripe SDK with the API key from application properties. */
 public class StripeConfig {
 
     @Value("${stripe.api-key}")

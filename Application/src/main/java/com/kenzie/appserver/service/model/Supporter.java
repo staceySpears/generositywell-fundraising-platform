@@ -1,6 +1,6 @@
 package com.kenzie.appserver.service.model;
 
-/** Represents an individual who has supported or is attending a campaign event. */
+/** Represents an individual who has donated to or supported a fundraising campaign. */
 public class Supporter {
 
     public String id;

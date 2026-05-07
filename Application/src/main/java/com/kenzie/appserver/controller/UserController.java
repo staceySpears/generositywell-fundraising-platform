@@ -46,7 +46,7 @@ public class UserController {
     public ResponseEntity<UserResponse> addNewUser(@Valid @RequestBody CreateUserRequest createUserRequest){
         UserResponse userResponse = userService.createUser(createUserRequest);
 
-        return ResponseEntity.created(URI.create("/user/" + userResponse.getName())).body(userResponse);
+        return ResponseEntity.created(URI.create("/users/" + userResponse.getId())).body(userResponse);
     }
 
     /**
@@ -69,12 +69,12 @@ public class UserController {
      * Requires a valid JWT.
      *
      * @param userId the user to delete
-     * @return 200 on success, 404 if not found
+     * @return 204 on success, 400 if ID is blank, 404 if not found
      */
     @DeleteMapping("/{id}")
     public ResponseEntity deleteUserById(@PathVariable("id") String userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
 }

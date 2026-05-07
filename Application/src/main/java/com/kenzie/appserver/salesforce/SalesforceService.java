@@ -79,12 +79,11 @@ public class SalesforceService {
      * {@link #syncCampaign} is still in-flight), the Opportunity will be created
      * without a {@code CampaignId} link — this is logged as a warning.
      *
-     * @param record       the campaign record at the time of the donation
+     * @param record        the campaign record at the time of the donation
      * @param amountInCents the donation amount in cents
-     * @param donorEmail   optional donor email for Contact linkage (currently unused)
      */
     @Async
-    public void syncDonation(CampaignRecord record, Long amountInCents, String donorEmail) {
+    public void syncDonation(CampaignRecord record, Long amountInCents) {
         if (!enabled) return;
         try {
             Map<String, Object> fields = new HashMap<>();

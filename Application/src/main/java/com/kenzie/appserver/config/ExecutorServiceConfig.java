@@ -7,8 +7,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Spring configuration for the shared thread pool used by async tasks.
+ */
 @Configuration
-/** Spring configuration for the shared thread pool used by async tasks. */
 public class ExecutorServiceConfig {
 
     /**

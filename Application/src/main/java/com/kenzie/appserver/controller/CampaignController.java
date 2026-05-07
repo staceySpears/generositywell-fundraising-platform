@@ -38,11 +38,7 @@ public class CampaignController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<CampaignResponse> getCampaignById(@PathVariable("id") String id) {
-        CampaignResponse response = campaignService.getCampaignById(id);
-        if (response == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(campaignService.getCampaignById(id));
     }
 
     /**
@@ -60,11 +56,14 @@ public class CampaignController {
 
     /**
      * {@code PUT /campaigns/{campaignId}} — updates a campaign's mutable fields.
-     * Only the campaign owner (matched by request body user ID) may update.
-     * Requires a valid JWT.
+     * The request body must include the caller's user ID; the service verifies it matches
+     * the stored campaign creator before applying changes. JWT is not enforced at this
+     * endpoint boundary — ownership is checked via the user ID in the request body.
      *
-     * @param request the update payload
-     * @return 200 with the updated campaign, 403 if not the owner, 409 if closed
+     * @param request the update payload (must include the caller's user ID)
+     * @return 200 with the updated campaign
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
+     *         403 if the caller is not the owner, 409 if the campaign is closed
      */
     @PutMapping("/{campaignId}")
     public ResponseEntity<CampaignResponse> updateCampaign(@Valid @RequestBody CampaignUpdateRequest request) {
@@ -127,12 +126,12 @@ public class CampaignController {
      * Requires a valid JWT.
      *
      * @param campaignId the campaign to delete
-     * @return 200 on success, 404 if not found
+     * @return 204 on success, 400 if ID is blank, 404 if not found
      */
     @DeleteMapping("/{campaignId}")
     public ResponseEntity<Void> deleteCampaignById(@PathVariable("campaignId") String campaignId) {
         campaignService.deleteCampaign(campaignId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     /**

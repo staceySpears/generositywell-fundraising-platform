@@ -23,7 +23,13 @@ public class PaymentIntentResponse {
     /** @return the client secret for front-end Stripe.js confirmation */
     public String getClientSecret() { return clientSecret; }
 
-    /** @return the Stripe PaymentIntent ID */
+    /**
+     * Returns the Stripe PaymentIntent ID.
+     * Exposing the PI ID (not the full PaymentIntent object) is intentional: it allows
+     * client-side reconciliation and support lookups without revealing sensitive payment data.
+     *
+     * @return the Stripe PaymentIntent ID
+     */
     public String getPaymentIntentId() { return paymentIntentId; }
 
     /** @return the charge amount in cents */

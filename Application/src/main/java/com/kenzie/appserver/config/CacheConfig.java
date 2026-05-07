@@ -6,9 +6,11 @@ import org.springframework.cache.annotation.EnableCaching;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Spring configuration that registers the {@link CacheStore} bean.
+ */
 @Configuration
 @EnableCaching
-/** Spring configuration that registers the {@link CacheStore} bean. */
 public class CacheConfig {
 
     /**

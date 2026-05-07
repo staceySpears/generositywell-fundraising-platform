@@ -31,20 +31,24 @@ public class CampaignService {
     }
 
     /**
-     * Returns the campaign with the given ID, or {@code null} if not found.
+     * Returns the campaign with the given ID.
      * Results are served from the in-memory cache when available.
+     * Cache misses (empty Optionals) are also cached to avoid repeated DynamoDB calls.
      *
      * @param id the campaign ID
-     * @return the campaign response, or {@code null}
+     * @return the campaign response
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
      */
     public CampaignResponse getCampaignById(String id) {
         Optional<CampaignRecord> cached = cache.get(id);
         if (cached != null) {
-            return cached.map(this::recordToResponse).orElse(null);
+            return cached.map(this::recordToResponse)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
         }
         Optional<CampaignRecord> record = campaignDao.findById(id);
         cache.add(id, record);
-        return record.map(this::recordToResponse).orElse(null);
+        return record.map(this::recordToResponse)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
     }
 
     /**
@@ -53,6 +57,7 @@ public class CampaignService {
      *
      * @param request the creation request
      * @return the created campaign response
+     * @throws org.springframework.web.server.ResponseStatusException 400 if required fields are missing
      */
     public CampaignResponse addNewCampaign(CreateCampaignRequest request) {
         CampaignRecord record = new CampaignRecord();
@@ -77,10 +82,11 @@ public class CampaignService {
     /**
      * Updates a campaign's mutable fields.
      * Only the original creator (matched by the user ID in the request) may update.
-     * Throws 404 if not found, 403 if the caller is not the owner, 409 if the campaign is closed.
      *
      * @param request the update request
      * @return the updated campaign response
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
+     *         403 if the caller is not the owner, 409 if the campaign is closed
      */
     public CampaignResponse updateCampaign(CampaignUpdateRequest request) {
         CampaignRecord record = campaignDao.findById(request.getId())
@@ -110,12 +116,13 @@ public class CampaignService {
 
     /**
      * Records a donation against a campaign and flips status to FUNDED when the goal is met.
-     * Throws 404 if the campaign does not exist, 409 if it is already closed.
      * Triggers an async Salesforce Opportunity sync after saving.
      *
-     * @param campaignId   the campaign to donate to
+     * @param campaignId    the campaign to donate to
      * @param amountInCents the donation amount in cents
      * @return the updated campaign response
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
+     *         409 if the campaign is already closed
      */
     public CampaignResponse addDonation(String campaignId, Long amountInCents) {
         CampaignRecord record = campaignDao.findById(campaignId)
@@ -134,18 +141,20 @@ public class CampaignService {
 
         campaignDao.save(record);
         cache.evict(campaignId);
-        salesforceService.syncDonation(record, amountInCents, null);
+        salesforceService.syncDonation(record, amountInCents);
 
         return recordToResponse(record);
     }
 
     /**
      * Closes a campaign, preventing further donations.
-     * Only the original creator may close it. Throws 404 or 403 as appropriate.
+     * Only the original creator may close it.
      *
      * @param campaignId       the campaign to close
      * @param requestingUserId the user ID from the authenticated JWT
      * @return the updated campaign response with CLOSED status
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
+     *         403 if the caller is not the owner
      */
     public CampaignResponse closeCampaign(String campaignId, String requestingUserId) {
         CampaignRecord record = campaignDao.findById(campaignId)
@@ -164,9 +173,10 @@ public class CampaignService {
 
     /**
      * Permanently deletes a campaign and evicts it from the cache.
-     * Throws 400 on empty ID, 404 if not found.
      *
      * @param campaignId the campaign to delete
+     * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
+     *         404 if not found
      */
     public void deleteCampaign(String campaignId) {
         if (campaignId.isEmpty()) {

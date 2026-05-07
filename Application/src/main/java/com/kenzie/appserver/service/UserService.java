@@ -47,10 +47,11 @@ public class UserService {
     /**
      * Registers a new user, hashing the password before persistence.
      * Triggers an async Salesforce Contact sync after the local record is saved.
-     * Throws 400 if name, email, or password is missing.
      *
      * @param request the registration request
      * @return the created user response (password hash is never exposed)
+     * @throws org.springframework.web.server.ResponseStatusException 400 if name, email,
+     *         or password is missing
      */
     public UserResponse createUser(CreateUserRequest request) {
         if (request.getName() == null || request.getEmail() == null || request.getPassword() == null) {
@@ -69,10 +70,11 @@ public class UserService {
 
     /**
      * Authenticates a user by email and password and returns a signed JWT.
-     * Always throws 401 with a generic message to avoid leaking whether the email exists.
+     * Always uses a generic error message to avoid leaking whether the email exists.
      *
      * @param request the login credentials
      * @return an auth response containing the JWT and the user ID
+     * @throws org.springframework.web.server.ResponseStatusException 401 on invalid credentials
      */
     public AuthResponse login(LoginRequest request) {
         UserRecord record = userDao.findByEmail(request.getEmail())
@@ -87,9 +89,11 @@ public class UserService {
     }
 
     /**
-     * Permanently deletes a user account. Throws 400 on empty ID, 404 if not found.
+     * Permanently deletes a user account.
      *
      * @param userId the user to delete
+     * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
+     *         404 if not found
      */
     public void deleteUser(String userId) {
         if (userId.isEmpty()) {
@@ -102,10 +106,11 @@ public class UserService {
     }
 
     /**
-     * Updates a user's name and email. Throws 404 if the user does not exist.
+     * Updates a user's name and email.
      *
      * @param request the update request
      * @return the updated user response
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
      */
     public UserResponse updateUser(UserUpdateRequest request) {
         UserRecord record = userDao.findById(request.getId())
