@@ -6,6 +6,7 @@ import com.kenzie.appserver.controller.model.CampaignUpdateRequest;
 import com.kenzie.appserver.controller.model.CreateCampaignRequest;
 import com.kenzie.appserver.repositories.CampaignDao;
 import com.kenzie.appserver.repositories.model.CampaignRecord;
+import com.kenzie.appserver.salesforce.SalesforceService;
 import com.kenzie.appserver.service.model.CampaignStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,10 +21,12 @@ public class CampaignService {
 
     private final CampaignDao campaignDao;
     private final CacheStore cache;
+    private final SalesforceService salesforceService;
 
-    public CampaignService(CampaignDao campaignDao, CacheStore cache) {
+    public CampaignService(CampaignDao campaignDao, CacheStore cache, SalesforceService salesforceService) {
         this.campaignDao = campaignDao;
         this.cache = cache;
+        this.salesforceService = salesforceService;
     }
 
     public CampaignResponse getCampaignById(String id) {
@@ -51,6 +54,7 @@ public class CampaignService {
         record.setCurrentAmount(0L);
         record.setStatus(CampaignStatus.ACTIVE.name());
         campaignDao.save(record);
+        salesforceService.syncCampaign(record);
 
         return recordToResponse(record);
     }
@@ -98,6 +102,7 @@ public class CampaignService {
 
         campaignDao.save(record);
         cache.evict(campaignId);
+        salesforceService.syncDonation(record, amountInCents, null);
 
         return recordToResponse(record);
     }

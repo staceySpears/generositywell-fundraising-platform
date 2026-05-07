@@ -1,151 +1,192 @@
-package com.kenzie.appserver.controller;//package com.kenzie.appserver.controller;
+package com.kenzie.appserver.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kenzie.appserver.IntegrationTest;
 import com.kenzie.appserver.controller.model.*;
+import com.kenzie.appserver.security.JwtUtil;
 import com.kenzie.appserver.service.UserService;
-import com.kenzie.appserver.service.model.User;
 import net.andreinc.mockneat.MockNeat;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.exceptions.base.MockitoAssertionError;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 
 @IntegrationTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserControllerTest {
+
     @Autowired
     private MockMvc mvc;
 
     @Autowired
-    UserService userService;
+    private UserService userService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     private final MockNeat mockNeat = MockNeat.threadLocal();
-
     private final ObjectMapper mapper = new ObjectMapper();
 
     private UserQueryUtility userQueryUtility;
 
     @BeforeAll
-    public void setup(){ userQueryUtility = new UserQueryUtility(mvc);}
+    void setup() {
+        userQueryUtility = new UserQueryUtility(mvc);
+    }
+
+    /** ------------------------------------------------------------------------
+     *  POST /users
+     *  ------------------------------------------------------------------------ **/
 
     @Test
-    public void getUserById_validId_isSuccessful() throws Exception {
+    void createUser_validRequest_isSuccessful() throws Exception {
+        CreateUserRequest request = buildCreateRequest();
 
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().first().get());
-        createUserRequest.setEmail(mockNeat.emails().get());
-
-        UserResponse userResponse = userService.createUser(createUserRequest);
-
-        // WHEN
-        userQueryUtility.userControllerClient.getUserById(userResponse.getId())
-                // THEN
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("name")
-                        .value(is(userResponse.getName())))
-                .andExpect(jsonPath("email")
-                        .value(is(userResponse.getEmail())))
-                .andExpect(status().isOk());
-
-        userQueryUtility.userControllerClient.deleteUser(userResponse.getId());
+        userQueryUtility.userControllerClient.addNewUser(request)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value(is(request.getName())))
+                .andExpect(jsonPath("$.email").value(is(request.getEmail())));
     }
 
     @Test
-    void getUserById_userResponse_isNull_throws_exception() throws Exception{
-
-        String id = UUID.randomUUID().toString();
-        userQueryUtility.userControllerClient.getUserById(id)
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    public void createUser_validRequest_isSuccessful() throws Exception {
-
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().first().get());
-        createUserRequest.setEmail(mockNeat.emails().get());
-
-        UserResponse userResponse = userService.createUser(createUserRequest);
-
-        // WHEN
-        userQueryUtility.userControllerClient.addNewUser(createUserRequest)
-                .andExpect(jsonPath("name")
-                        .value(is(createUserRequest.getName())))
-                .andExpect(jsonPath("email")
-                        .value(is(createUserRequest.getEmail())))
-                .andExpect(status().is2xxSuccessful());
-
-        userQueryUtility.userControllerClient.deleteUser(userResponse.getId());
-    }
-
-    @Test
-    public void addNewUser_userRequestDoesNotExist() throws Exception {
-
-        CreateUserRequest createUserRequest = null;
-        userQueryUtility.userControllerClient.addNewUser(createUserRequest)
+    void createUser_nullBody_returnsBadRequest() throws Exception {
+        mvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
+    /** ------------------------------------------------------------------------
+     *  POST /auth/login
+     *  ------------------------------------------------------------------------ **/
+
     @Test
-    public void updateUser_validRequest_isSuccessful() throws Exception {
+    void login_validCredentials_returnsToken() throws Exception {
+        String email = mockNeat.emails().get();
+        String password = "SecurePass42!";
 
-        // GIVEN
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().first().get());
-        createUserRequest.setEmail(mockNeat.emails().get());
+        CreateUserRequest createRequest = buildCreateRequest();
+        createRequest.setEmail(email);
+        createRequest.setPassword(password);
+        userQueryUtility.userControllerClient.addNewUser(createRequest)
+                .andExpect(status().isCreated());
 
-        UserResponse userResponse = userService.createUser(createUserRequest);
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setPassword(password);
 
-        UserUpdateRequest userUpdateRequest = new UserUpdateRequest();
-        userUpdateRequest.setId(userResponse.getId());
-        userUpdateRequest.setName(mockNeat.names().first().get());
-        userUpdateRequest.setEmail(mockNeat.emails().get());
-
-        userQueryUtility.userControllerClient.updateUser(userUpdateRequest)
-//                .andExpect(jsonPath("id")
-//                        .value(is(userUpdateRequest.getId())))
-                .andExpect(jsonPath("name")
-                        .value(is(userUpdateRequest.getName())))
-                .andExpect(jsonPath("email")
-                        .value(is(userUpdateRequest.getEmail())))
-                .andExpect(status().isOk());
-
-        userQueryUtility.userControllerClient.deleteUser(userUpdateRequest.getId());
+        userQueryUtility.userControllerClient.login(loginRequest)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value(notNullValue()))
+                .andExpect(jsonPath("$.userId").value(notNullValue()));
     }
 
     @Test
-    public void deleteUser_validId_isSuccessful() throws Exception {
+    void login_wrongPassword_returnsUnauthorized() throws Exception {
+        String email = mockNeat.emails().get();
 
-        // GIVEN
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setName(mockNeat.names().first().get());
-        createUserRequest.setEmail(mockNeat.emails().get());
+        CreateUserRequest createRequest = buildCreateRequest();
+        createRequest.setEmail(email);
+        createRequest.setPassword("CorrectPass1!");
+        userQueryUtility.userControllerClient.addNewUser(createRequest);
 
-        UserResponse userResponse = userService.createUser(createUserRequest);
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setPassword("WrongPass999!");
 
-       userQueryUtility.userControllerClient.deleteUser(userResponse.getId())
-                .andExpect(status().isOk());
+        userQueryUtility.userControllerClient.login(loginRequest)
+                .andExpect(status().isUnauthorized());
+    }
 
-        userQueryUtility.userControllerClient.getUserById(userResponse.getId())
+    @Test
+    void login_unknownEmail_returnsUnauthorized() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("ghost@nowhere.com");
+        loginRequest.setPassword("DoesNotMatter1!");
+
+        userQueryUtility.userControllerClient.login(loginRequest)
+                .andExpect(status().isUnauthorized());
+    }
+
+    /** ------------------------------------------------------------------------
+     *  GET /users/{id}
+     *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void getUserById_validId_isSuccessful() throws Exception {
+        CreateUserRequest request = buildCreateRequest();
+        UserResponse created = userService.createUser(request);
+
+        userQueryUtility.userControllerClient.getUserById(created.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(is(created.getName())))
+                .andExpect(jsonPath("$.email").value(is(created.getEmail())));
+    }
+
+    @Test
+    void getUserById_notFound_returns404() throws Exception {
+        userQueryUtility.userControllerClient.getUserById("does-not-exist-" + randomId())
                 .andExpect(status().isNotFound());
     }
 
+    /** ------------------------------------------------------------------------
+     *  PUT /users/{id}
+     *  ------------------------------------------------------------------------ **/
 
+    @Test
+    void updateUser_validRequest_isSuccessful() throws Exception {
+        CreateUserRequest createRequest = buildCreateRequest();
+        UserResponse created = userService.createUser(createRequest);
+        String token = jwtUtil.generateToken(created.getId(), created.getEmail());
+
+        UserUpdateRequest update = new UserUpdateRequest();
+        update.setId(created.getId());
+        update.setName(mockNeat.names().first().get());
+        update.setEmail(mockNeat.emails().get());
+
+        userQueryUtility.userControllerClient.updateUser(update, token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(is(update.getName())))
+                .andExpect(jsonPath("$.email").value(is(update.getEmail())));
+    }
+
+    /** ------------------------------------------------------------------------
+     *  DELETE /users/{id}
+     *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void deleteUser_validId_isSuccessful() throws Exception {
+        CreateUserRequest request = buildCreateRequest();
+        UserResponse created = userService.createUser(request);
+        String token = jwtUtil.generateToken(created.getId(), created.getEmail());
+
+        userQueryUtility.userControllerClient.deleteUser(created.getId(), token)
+                .andExpect(status().isOk());
+
+        userQueryUtility.userControllerClient.getUserById(created.getId())
+                .andExpect(status().isNotFound());
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private CreateUserRequest buildCreateRequest() {
+        CreateUserRequest request = new CreateUserRequest();
+        request.setName(mockNeat.names().first().get());
+        request.setEmail(mockNeat.emails().get());
+        request.setPassword("TestPass123!");
+        return request;
+    }
+
+    private String randomId() {
+        return java.util.UUID.randomUUID().toString();
+    }
 }

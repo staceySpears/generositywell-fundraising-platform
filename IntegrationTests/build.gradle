@@ -1,32 +1,47 @@
 plugins {
     id 'ata-curriculum.snippets-conventions'
     id 'ata-curriculum.integration-test-conventions'
+    id 'io.spring.dependency-management' version '1.1.4'
 }
 configurations {
     all {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        // The ata-curriculum java-conventions plugin pins JUnit to 5.6.0, which is incompatible
+        // with Spring Boot 3.2.5's SpringExtension. Force the BOM-managed version.
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.junit.jupiter') {
+                details.useVersion '5.10.2'
+            }
+            if (details.requested.group == 'org.junit.platform') {
+                details.useVersion '1.10.2'
+            }
+        }
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.5'
+        mavenBom 'software.amazon.awssdk:bom:2.25.23'
     }
 }
 
 dependencies {
     implementation project(":Application")
-    testImplementation('org.springframework.boot:spring-boot-starter-web:2.6.3')
-    testImplementation('org.springframework.boot:spring-boot-starter-test:2.6.3')
+    testImplementation('org.springframework.boot:spring-boot-starter-web')
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
 
     testImplementation group: 'org.testcontainers', name: 'testcontainers', version: '1.16.3'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testImplementation 'software.amazon.awssdk:dynamodb:2.25.23'
     testImplementation group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
-    testImplementation 'io.rest-assured:rest-assured:4.4.0'
     testImplementation 'net.andreinc:mockneat:0.4.7'
 
-    testImplementation group: 'io.micrometer', name: 'micrometer-core', version: '1.8.3'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.2'
-    testImplementation("org.springframework.data:spring-data-commons:2.6.2")
-    testImplementation("org.springframework:spring-tx:5.3.16")
+    testImplementation 'io.micrometer:micrometer-core'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 
 
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 task buildZip(type: Zip) {

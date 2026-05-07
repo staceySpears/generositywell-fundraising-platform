@@ -6,6 +6,7 @@ import com.kenzie.appserver.controller.model.CampaignUpdateRequest;
 import com.kenzie.appserver.controller.model.CreateCampaignRequest;
 import com.kenzie.appserver.repositories.CampaignDao;
 import com.kenzie.appserver.repositories.model.CampaignRecord;
+import com.kenzie.appserver.salesforce.SalesforceService;
 import com.kenzie.appserver.service.model.CampaignStatus;
 import com.kenzie.appserver.service.model.Supporter;
 import com.kenzie.appserver.service.model.User;
@@ -37,6 +38,9 @@ class CampaignServiceTest {
 
     @Mock
     private CacheStore cache;
+
+    @Mock
+    private SalesforceService salesforceService;
 
     @InjectMocks
     private CampaignService campaignService;

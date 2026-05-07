@@ -23,6 +23,7 @@ public class CampaignRecord {
     private Long goalAmount;    // in cents
     private Long currentAmount; // in cents
     private String status;      // CampaignStatus name()
+    private String salesforceCampaignId; // set async after SF sync
 
     public CampaignRecord() {}
 
@@ -64,4 +65,7 @@ public class CampaignRecord {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getSalesforceCampaignId() { return salesforceCampaignId; }
+    public void setSalesforceCampaignId(String salesforceCampaignId) { this.salesforceCampaignId = salesforceCampaignId; }
 }

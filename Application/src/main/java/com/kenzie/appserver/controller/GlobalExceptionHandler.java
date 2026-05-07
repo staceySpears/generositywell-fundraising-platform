@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +44,15 @@ import java.util.stream.Collectors;
                                     .collect(Collectors.joining(", "));
                   log.warn("Validation failed: {}", fieldErrors);
                   return buildErrorResponse(HttpStatus.BAD_REQUEST, "Validation failed: " + fieldErrors);
+        }
+
+    /**
+     * Handles malformed or missing request bodies (e.g., null body, invalid JSON).
+         */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<Map<String, Object>> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+                  log.warn("Unreadable request body: {}", ex.getMessage());
+                  return buildErrorResponse(HttpStatus.BAD_REQUEST, "Request body is missing or malformed");
         }
 
     /**

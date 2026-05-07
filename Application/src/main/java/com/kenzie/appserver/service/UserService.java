@@ -7,6 +7,7 @@ import com.kenzie.appserver.controller.model.UserResponse;
 import com.kenzie.appserver.controller.model.UserUpdateRequest;
 import com.kenzie.appserver.repositories.UserDao;
 import com.kenzie.appserver.repositories.model.UserRecord;
+import com.kenzie.appserver.salesforce.SalesforceService;
 import com.kenzie.appserver.security.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,11 +22,13 @@ public class UserService {
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final SalesforceService salesforceService;
 
-    public UserService(UserDao userDao, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public UserService(UserDao userDao, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, SalesforceService salesforceService) {
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.salesforceService = salesforceService;
     }
 
     public UserResponse getUserById(String userId) {
@@ -44,6 +47,7 @@ public class UserService {
         record.setEmail(request.getEmail());
         record.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         userDao.save(record);
+        salesforceService.syncContact(record);
 
         return recordToResponse(record);
     }

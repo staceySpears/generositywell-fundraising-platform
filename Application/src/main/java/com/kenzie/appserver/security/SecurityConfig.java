@@ -1,5 +1,6 @@
 package com.kenzie.appserver.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,8 +28,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // public read access to campaigns
+                        // public read access to campaigns and user profiles
                         .requestMatchers(HttpMethod.GET, "/campaigns/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
                         // donations are public so supporters don't need an account (Stripe handles identity)
                         .requestMatchers(HttpMethod.POST, "/campaigns/*/donate").permitAll()
                         // registration and login are always open
@@ -41,6 +43,9 @@ public class SecurityConfig {
                         // everything else requires a valid JWT
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) ->
+                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
