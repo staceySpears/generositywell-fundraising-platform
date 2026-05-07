@@ -266,10 +266,37 @@ class CampaignServiceTest {
         request.setDescription("Updated description");
         request.setGoalAmount(300000L);
 
-        CampaignResponse response = campaignService.updateCampaign(request);
+        CampaignResponse response = campaignService.updateCampaign(request, "user-1");
 
         assertEquals("Updated Name", response.getName());
         verify(cache).evict("camp-10");
+    }
+
+    @Test
+    void updateCampaign_notOwner_throwsForbidden() {
+        User owner = new User("user-1", "Stacey", "stacey@example.com");
+        CampaignRecord record = campaignRecord("camp-10b");
+        record.setUser(owner);
+
+        when(campaignDao.findById("camp-10b")).thenReturn(Optional.of(record));
+
+        CampaignUpdateRequest request = new CampaignUpdateRequest();
+        request.setId("camp-10b");
+        request.setName("Hijacked");
+        request.setDate(LocalDate.now().toString());
+        request.setDeadline(LocalDate.now().plusDays(30).toString());
+        request.setCategory("Arts");
+        request.setUser(owner);
+        request.setSupporters(new ArrayList<>());
+        request.setDescription("desc");
+        request.setGoalAmount(100000L);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.updateCampaign(request, "attacker-id")
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
@@ -294,7 +321,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.updateCampaign(request)
+                () -> campaignService.updateCampaign(request, "user-1")
         );
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());

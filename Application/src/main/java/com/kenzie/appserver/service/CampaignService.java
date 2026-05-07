@@ -81,18 +81,19 @@ public class CampaignService {
 
     /**
      * Updates a campaign's mutable fields.
-     * Only the original creator (matched by the user ID in the request) may update.
+     * Only the original creator may update; ownership is verified against the JWT subject.
      *
-     * @param request the update request
+     * @param request          the update request
+     * @param requestingUserId the user ID from the authenticated JWT
      * @return the updated campaign response
      * @throws org.springframework.web.server.ResponseStatusException 404 if not found,
      *         403 if the caller is not the owner, 409 if the campaign is closed
      */
-    public CampaignResponse updateCampaign(CampaignUpdateRequest request) {
+    public CampaignResponse updateCampaign(CampaignUpdateRequest request, String requestingUserId) {
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
-        if (!record.getUser().getId().equals(request.getUser().getId())) {
+        if (!record.getUser().getId().equals(requestingUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can update this campaign");
         }
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
