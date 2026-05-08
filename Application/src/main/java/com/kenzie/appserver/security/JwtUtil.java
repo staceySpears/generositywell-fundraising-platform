@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/** Utility for creating and verifying HMAC-SHA JWTs. The subject is the user ID. */
 @Component
 public class JwtUtil {
 
@@ -24,6 +25,13 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
+    /**
+     * Generates a signed JWT with the user ID as the subject and email as a custom claim.
+     *
+     * @param userId the user ID (stored as JWT subject)
+     * @param email  the user's email (stored as the {@code email} claim)
+     * @return a compact signed JWT string
+     */
     public String generateToken(String userId, String email) {
         return Jwts.builder()
                 .subject(userId)
@@ -34,14 +42,32 @@ public class JwtUtil {
                 .compact();
     }
 
+    /**
+     * Extracts the user ID (JWT subject) from a token.
+     *
+     * @param token a compact JWT string
+     * @return the user ID
+     */
     public String extractUserId(String token) {
         return parseClaims(token).getSubject();
     }
 
+    /**
+     * Extracts the email claim from a token.
+     *
+     * @param token a compact JWT string
+     * @return the email address
+     */
     public String extractEmail(String token) {
         return parseClaims(token).get("email", String.class);
     }
 
+    /**
+     * Returns {@code true} if the token has a valid signature and has not expired.
+     *
+     * @param token a compact JWT string
+     * @return {@code true} if valid
+     */
     public boolean isValid(String token) {
         try {
             parseClaims(token);

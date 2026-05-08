@@ -7,9 +7,18 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Spring configuration for the shared thread pool used by async tasks.
+ */
 @Configuration
 public class ExecutorServiceConfig {
 
+    /**
+     * Fixed-size thread pool (4 threads) used by {@code @Async} methods and other
+     * background tasks. Named threads appear as {@code default_task_executor_thread-N} in logs.
+     *
+     * @return the TaskExecutor bean
+     */
     @Bean
     public TaskExecutor executorService() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

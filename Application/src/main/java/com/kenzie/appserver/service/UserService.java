@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+/** Business logic for user registration, authentication, and profile management. */
 @Service
 public class UserService {
 
@@ -31,12 +32,27 @@ public class UserService {
         this.salesforceService = salesforceService;
     }
 
+    /**
+     * Returns the user with the given ID, or {@code null} if not found.
+     *
+     * @param userId the user ID
+     * @return the user response, or {@code null}
+     */
     public UserResponse getUserById(String userId) {
         return userDao.findById(userId)
                 .map(this::recordToResponse)
                 .orElse(null);
     }
 
+    /**
+     * Registers a new user, hashing the password before persistence.
+     * Triggers an async Salesforce Contact sync after the local record is saved.
+     *
+     * @param request the registration request
+     * @return the created user response (password hash is never exposed)
+     * @throws org.springframework.web.server.ResponseStatusException 400 if name, email,
+     *         or password is missing
+     */
     public UserResponse createUser(CreateUserRequest request) {
         if (request.getName() == null || request.getEmail() == null || request.getPassword() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name, email, and password are required");
@@ -52,6 +68,14 @@ public class UserService {
         return recordToResponse(record);
     }
 
+    /**
+     * Authenticates a user by email and password and returns a signed JWT.
+     * Always uses a generic error message to avoid leaking whether the email exists.
+     *
+     * @param request the login credentials
+     * @return an auth response containing the JWT and the user ID
+     * @throws org.springframework.web.server.ResponseStatusException 401 on invalid credentials
+     */
     public AuthResponse login(LoginRequest request) {
         UserRecord record = userDao.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
@@ -64,6 +88,13 @@ public class UserService {
         return new AuthResponse(token, record.getId());
     }
 
+    /**
+     * Permanently deletes a user account.
+     *
+     * @param userId the user to delete
+     * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
+     *         404 if not found
+     */
     public void deleteUser(String userId) {
         if (userId.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be empty");
@@ -74,6 +105,13 @@ public class UserService {
         userDao.deleteById(userId);
     }
 
+    /**
+     * Updates a user's name and email.
+     *
+     * @param request the update request
+     * @return the updated user response
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
+     */
     public UserResponse updateUser(UserUpdateRequest request) {
         UserRecord record = userDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));

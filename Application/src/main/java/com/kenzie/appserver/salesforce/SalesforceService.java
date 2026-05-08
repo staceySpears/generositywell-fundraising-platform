@@ -14,6 +14,12 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Asynchronous bridge between GenerosityWell and Salesforce NPSP.
+ * All public methods are {@code @Async} and are no-ops when {@code salesforce.enabled=false}.
+ * Failures are caught and logged rather than propagated, so a Salesforce outage never
+ * breaks a user-facing request.
+ */
 @Service
 public class SalesforceService {
 
@@ -32,7 +38,14 @@ public class SalesforceService {
         this.enabled = enabled;
     }
 
-    // Called after a campaign is created locally — creates a Salesforce Campaign and stores the SF ID
+    /**
+     * Creates a Salesforce Campaign record for a newly saved local campaign.
+     * After the SF campaign is created, re-fetches the latest local record before
+     * writing back the SF ID to avoid overwriting concurrent updates (e.g. donations
+     * that arrived while this async task was queued).
+     *
+     * @param record a snapshot of the CampaignRecord at the time the campaign was created
+     */
     @Async
     public void syncCampaign(CampaignRecord record) {
         if (!enabled) return;
@@ -62,9 +75,17 @@ public class SalesforceService {
         }
     }
 
-    // Called after a donation is recorded — creates an Opportunity (NPSP donation record)
+    /**
+     * Creates a Salesforce Opportunity (NPSP donation record) for a recorded donation.
+     * If the local campaign's Salesforce ID has not been persisted yet (because
+     * {@link #syncCampaign} is still in-flight), the Opportunity will be created
+     * without a {@code CampaignId} link — this is logged as a warning.
+     *
+     * @param record        the campaign record at the time of the donation
+     * @param amountInCents the donation amount in cents
+     */
     @Async
-    public void syncDonation(CampaignRecord record, Long amountInCents, String donorEmail) {
+    public void syncDonation(CampaignRecord record, Long amountInCents) {
         if (!enabled) return;
         try {
             Map<String, Object> fields = new HashMap<>();
@@ -89,7 +110,13 @@ public class SalesforceService {
         }
     }
 
-    // Called after a user registers — creates or updates a Salesforce Contact
+    /**
+     * Creates a Salesforce Contact record for a newly registered user.
+     * Single-name users (no space) are stored with an empty first name and the
+     * full name as the last name.
+     *
+     * @param record the UserRecord of the newly registered user
+     */
     @Async
     public void syncContact(UserRecord record) {
         if (!enabled) return;

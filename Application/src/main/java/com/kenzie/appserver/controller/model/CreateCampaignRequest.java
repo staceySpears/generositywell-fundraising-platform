@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
+/** Request body for creating a new fundraising campaign. Monetary amounts are in cents. */
 public class CreateCampaignRequest {
 
     @JsonProperty("id")
@@ -52,33 +53,53 @@ public class CreateCampaignRequest {
 
     public CreateCampaignRequest() {}
 
+    /** @return an optional client-supplied ID (ignored; the service generates a UUID) */
     public String getId() { return id; }
+    /** @param id an optional client-supplied ID */
     public void setId(String id) { this.id = id; }
 
+    /** @return the campaign display name */
     public String getName() { return name; }
+    /** @param name the campaign display name */
     public void setName(String name) { this.name = name; }
 
+    /** @return the campaign start date (ISO-8601) */
     public String getDate() { return date; }
+    /** @param date the start date */
     public void setDate(String date) { this.date = date; }
 
+    /** @return the fundraising deadline (ISO-8601) */
     public String getDeadline() { return deadline; }
+    /** @param deadline the fundraising deadline */
     public void setDeadline(String deadline) { this.deadline = deadline; }
 
+    /** @return the campaign category */
     public String getCategory() { return category; }
+    /** @param category the campaign category */
     public void setCategory(String category) { this.category = category; }
 
+    /** @return the campaign owner */
     public User getUser() { return user; }
+    /** @param user the campaign owner */
     public void setUser(User user) { this.user = user; }
 
+    /** @return the initial list of supporters */
     public List<Supporter> getSupporters() { return supporters; }
+    /** @param supporters the initial list of supporters */
     public void setSupporters(List<Supporter> supporters) { this.supporters = supporters; }
 
+    /** @return the campaign address */
     public String getAddress() { return address; }
+    /** @param address the campaign address */
     public void setAddress(String address) { this.address = address; }
 
+    /** @return the campaign description */
     public String getDescription() { return description; }
+    /** @param description the campaign description */
     public void setDescription(String description) { this.description = description; }
 
+    /** @return the fundraising goal in cents */
     public Long getGoalAmount() { return goalAmount; }
+    /** @param goalAmount the fundraising goal in cents */
     public void setGoalAmount(Long goalAmount) { this.goalAmount = goalAmount; }
 }

@@ -115,6 +115,72 @@ class CampaignServiceTest {
         assertEquals(0, response.getPercentFunded());
     }
 
+    @Test
+    void addNewCampaign_blankName_throwsBadRequest() {
+        User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
+
+        CreateCampaignRequest request = new CreateCampaignRequest();
+        request.setName("   ");
+        request.setGoalAmount(100000L);
+        request.setUser(user);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addNewCampaign(request)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addNewCampaign_nullGoalAmount_throwsBadRequest() {
+        User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
+
+        CreateCampaignRequest request = new CreateCampaignRequest();
+        request.setName("Valid Name");
+        request.setGoalAmount(null);
+        request.setUser(user);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addNewCampaign(request)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addNewCampaign_zeroGoalAmount_throwsBadRequest() {
+        User user = new User(UUID.randomUUID().toString(), "Stacey", "stacey@example.com");
+
+        CreateCampaignRequest request = new CreateCampaignRequest();
+        request.setName("Valid Name");
+        request.setGoalAmount(0L);
+        request.setUser(user);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addNewCampaign(request)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addNewCampaign_nullUser_throwsBadRequest() {
+        CreateCampaignRequest request = new CreateCampaignRequest();
+        request.setName("Valid Name");
+        request.setGoalAmount(100000L);
+        request.setUser(null);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addNewCampaign(request)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
     /** ------------------------------------------------------------------------
      *  CampaignService.addDonation
      *  ------------------------------------------------------------------------ **/
@@ -187,6 +253,68 @@ class CampaignServiceTest {
         verify(campaignDao).save(captor.capture());
         assertEquals(CampaignStatus.FUNDED.name(), captor.getValue().getStatus());
         assertEquals(205000L, captor.getValue().getCurrentAmount());
+    }
+
+    @Test
+    void addDonation_nullCampaignId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation(null, 1000L)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).findById(any());
+    }
+
+    @Test
+    void addDonation_blankCampaignId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("  ", 1000L)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).findById(any());
+    }
+
+    @Test
+    void addDonation_nullAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-null-amt");
+        when(campaignDao.findById("camp-null-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-null-amt", null)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addDonation_zeroAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-zero-amt");
+        when(campaignDao.findById("camp-zero-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-zero-amt", 0L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
+    }
+
+    @Test
+    void addDonation_negativeAmount_throwsBadRequest() {
+        CampaignRecord record = campaignRecord("camp-neg-amt");
+        when(campaignDao.findById("camp-neg-amt")).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.addDonation("camp-neg-amt", -500L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        verify(campaignDao, never()).save(any());
     }
 
     @Test
@@ -330,6 +458,24 @@ class CampaignServiceTest {
     /** ------------------------------------------------------------------------
      *  CampaignService.deleteCampaign
      *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void deleteCampaign_nullId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.deleteCampaign(null)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void deleteCampaign_blankId_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.deleteCampaign("   ")
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
 
     @Test
     void deleteCampaign_emptyId_throwsBadRequest() {

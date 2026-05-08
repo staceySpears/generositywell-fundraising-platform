@@ -12,6 +12,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Stateless Spring Security configuration.
+ * CSRF is disabled (no session cookies), and all authentication is via JWT in the
+ * {@code Authorization: Bearer} header.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -22,6 +27,14 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    /**
+     * Defines the security filter chain: public endpoints, JWT filter, and a 401
+     * entry point for unauthenticated requests to protected routes.
+     *
+     * @param http the HttpSecurity builder
+     * @return the configured SecurityFilterChain
+     * @throws Exception if configuration fails
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
@@ -50,6 +63,11 @@ public class SecurityConfig {
                 .build();
     }
 
+    /**
+     * Provides a BCrypt password encoder with default strength (10 rounds).
+     *
+     * @return the password encoder bean
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
