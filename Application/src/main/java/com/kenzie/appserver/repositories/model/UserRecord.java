@@ -2,6 +2,7 @@ package com.kenzie.appserver.repositories.model;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
 /**
  * DynamoDB-mapped record for a registered user.
@@ -40,7 +41,8 @@ public class UserRecord {
         this.name = name;
     }
 
-    /** @return the user's email address */
+    /** @return the user's email address (GSI partition key for {@code email-index}) */
+    @DynamoDbSecondaryPartitionKey(indexNames = "email-index")
     public String getEmail() {
         return email;
     }
