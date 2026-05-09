@@ -140,7 +140,9 @@ public class CampaignService {
         record.setDate(request.getDate());
         record.setDeadline(request.getDeadline());
         record.setCategory(request.getCategory());
-        record.setUser(request.getUser());
+        // Deliberately do NOT call record.setUser() — the persisted owner is immutable
+        // after creation. The ownership check above already ensures only the original
+        // creator reaches this point, so the stored user field is already correct.
         record.setSupporters(request.getSupporters());
         record.setAddress(request.getAddress());
         record.setDescription(request.getDescription());
@@ -250,15 +252,19 @@ public class CampaignService {
      * @param campaignId       the campaign to delete
      * @param requestingUserId the user ID from the authenticated JWT
      * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
-     *         404 if not found
+     *         404 if not found, 403 if the caller is not the owner
      */
     public void deleteCampaign(String campaignId, String requestingUserId) {
         if (campaignId == null || campaignId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
         }
-        if (!campaignDao.existsById(campaignId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found");
+        CampaignRecord record = campaignDao.findById(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
+
+        if (record.getUser() == null || !Objects.equals(requestingUserId, record.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can delete this campaign");
         }
+
         campaignDao.deleteById(campaignId);
         cache.evict(campaignId);
 
