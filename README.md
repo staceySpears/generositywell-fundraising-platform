@@ -205,8 +205,9 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 | **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling | ✅ Complete |
 | **Phase 2 — Domain Rename & Model Cleanup** | Rename capstone entities to platform domain, eliminate duplicate models, add Bean Validation, proper date types | 🔄 In Progress |
 | **Phase 3 — Feature Completion** | React + Vite migration, campaign event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
-| **Phase 4 — Platform Enhancements** | Stripe donations, Lambda webhook handler, impact reporting, donor dashboard, Salesforce Data Cloud + Agentforce | Planned |
+| **Phase 4 — Platform Enhancements** | Stripe donations, Lambda webhook handler, impact reporting, donor dashboard, PWA, Salesforce Data Cloud + Agentforce | Planned |
 | **Phase 5 — Production Hardening** | CI/CD pipeline, S3 + CloudFront deploy, E2E tests, rate limiting, API Gateway | Planned |
+| **Phase 6 — Mobile** | React Native + Expo donor/volunteer app; Salesforce Lightning Web Components for organizer mobile | Planned |
 
 ### Phase 1 — Architecture Stabilization ✅
 
@@ -252,6 +253,7 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 - AWS Lambda Stripe webhook handler — processes payment events asynchronously
 - Structured impact reporting — organizers post updates; donors see their contribution's effect
 - Donor dashboard — giving history, volunteer hours, campaigns followed
+- **Progressive Web App (PWA)** — `vite-plugin-pwa` adds a web app manifest and service worker to the existing React/Vite SPA; donors and volunteers can "Add to Home Screen" on any device without an app store; eliminates friction for one-time contributors
 - Salesforce Data Cloud unification — 360° view of community engagement per organizer
 - Agentforce agent — auto-drafts Impact Update posts from real-time campaign data
 
@@ -262,3 +264,19 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 - API Gateway — rate limiting, CORS, auth header validation
 - Playwright or Cypress E2E tests covering the critical donor flow
 - CloudWatch dashboards wired via Micrometer for key platform metrics
+
+### Phase 6 — Mobile
+
+Two tracks targeting distinct user groups — built to share maximum logic with the existing web frontend.
+
+**Donor & Volunteer App (React Native + Expo)**
+- Expo abstracts iOS (Xcode) and Android (Android Studio) build complexity
+- Reuses the Zod validation schemas, Axios API client, and JWT auth flow from the web frontend
+- TanStack Query for server-state management is identical API surface on React Native
+- Core flows: browse campaigns, donate (Stripe), volunteer RSVP, push notifications for campaign milestones
+
+**Organizer App (Salesforce Lightning Web Components)**
+- Organizers already live in Salesforce — no separate app download required
+- Custom LWCs expose campaign health, donation velocity, and volunteer pipeline directly in the Salesforce Mobile App
+- As Data Cloud and Agentforce integrations land (Phase 4), LWC surfaces the AI-drafted Impact Updates for organizer review and one-tap publish
+- Zero additional deployment infrastructure: LWCs deploy as part of the Salesforce org
