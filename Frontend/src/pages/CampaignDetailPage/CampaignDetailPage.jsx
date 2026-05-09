@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Label from '@radix-ui/react-label';
+import { QRCodeSVG } from 'qrcode.react';
 import { getCampaignById, donate } from '../../api/campaignApi.js';
 import { donationSchema } from '../../schemas/campaign.js';
 import styles from './CampaignDetailPage.module.css';
@@ -28,9 +30,24 @@ const formatDollars = (cents) =>
 const progressPercent = (current, goal) =>
   goal > 0 ? Math.min(100, Math.round(((current ?? 0) / goal) * 100)) : 0;
 
+/** Downloads the campaign QR code as a standalone SVG file for printing. */
+function downloadQR(qrRef, campaignName) {
+  const svg = qrRef.current?.querySelector('svg');
+  if (!svg) return;
+  const serialized = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([serialized], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${campaignName.replace(/\s+/g, '-').toLowerCase()}-qr.svg`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function CampaignDetailPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const qrRef = useRef(null);
 
   const {
     data: campaign,
@@ -146,6 +163,24 @@ export default function CampaignDetailPage() {
             This campaign has closed. Thank you to all who contributed!
           </p>
         )}
+
+        <div className={styles.qrCard} ref={qrRef}>
+          <p className={styles.qrTitle}>Share this campaign</p>
+          <div className={styles.qrCode}>
+            <QRCodeSVG
+              value={`${window.location.origin}/campaigns/${campaign.id}`}
+              size={180}
+              marginSize={1}
+            />
+          </div>
+          <button
+            type="button"
+            className={styles.qrDownloadBtn}
+            onClick={() => downloadQR(qrRef, campaign.name)}
+          >
+            Download for flyers
+          </button>
+        </div>
       </aside>
     </div>
   );
