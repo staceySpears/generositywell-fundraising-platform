@@ -92,8 +92,8 @@ class CampaignServiceTest {
 
         CreateCampaignRequest request = new CreateCampaignRequest();
         request.setName("Send the Wildcats to State Finals");
-        request.setDate(LocalDate.now().toString());
-        request.setDeadline(LocalDate.now().plusDays(30).toString());
+        request.setDate(LocalDate.now());
+        request.setDeadline(LocalDate.now().plusDays(30));
         request.setCategory("Sports");
         request.setUser(user);
         request.setSupporters(new ArrayList<>());
@@ -386,8 +386,8 @@ class CampaignServiceTest {
         CampaignUpdateRequest request = new CampaignUpdateRequest();
         request.setId("camp-10");
         request.setName("Updated Name");
-        request.setDate(LocalDate.now().toString());
-        request.setDeadline(LocalDate.now().plusDays(60).toString());
+        request.setDate(LocalDate.now());
+        request.setDeadline(LocalDate.now().plusDays(60));
         request.setCategory("Arts");
         request.setUser(user);
         request.setSupporters(new ArrayList<>());
@@ -411,8 +411,8 @@ class CampaignServiceTest {
         CampaignUpdateRequest request = new CampaignUpdateRequest();
         request.setId("camp-10b");
         request.setName("Hijacked");
-        request.setDate(LocalDate.now().toString());
-        request.setDeadline(LocalDate.now().plusDays(30).toString());
+        request.setDate(LocalDate.now());
+        request.setDeadline(LocalDate.now().plusDays(30));
         request.setCategory("Arts");
         request.setUser(owner);
         request.setSupporters(new ArrayList<>());
@@ -441,8 +441,8 @@ class CampaignServiceTest {
         request.setUser(user);
         request.setGoalAmount(100000L);
         request.setName("name");
-        request.setDate(LocalDate.now().toString());
-        request.setDeadline(LocalDate.now().plusDays(30).toString());
+        request.setDate(LocalDate.now());
+        request.setDeadline(LocalDate.now().plusDays(30));
         request.setCategory("Sports");
         request.setDescription("desc");
         request.setSupporters(new ArrayList<>());
@@ -530,8 +530,8 @@ class CampaignServiceTest {
         CampaignRecord record = new CampaignRecord();
         record.setId(id);
         record.setName("Test Campaign " + id);
-        record.setDate(LocalDate.now().toString());
-        record.setDeadline(LocalDate.now().plusDays(30).toString());
+        record.setDate(LocalDate.now());
+        record.setDeadline(LocalDate.now().plusDays(30));
         record.setCategory("Community");
         record.setAddress("123 Test St");
         record.setDescription("Test description");

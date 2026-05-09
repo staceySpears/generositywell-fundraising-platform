@@ -6,6 +6,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -19,8 +20,8 @@ public class CampaignRecord {
 
     private String id;
     private String name;
-    private String date;
-    private String deadline;
+    private LocalDate date;
+    private LocalDate deadline;
     private String category;
     private User user;
     private List<Supporter> supporters;
@@ -44,15 +45,15 @@ public class CampaignRecord {
     /** @param name the campaign display name */
     public void setName(String name) { this.name = name; }
 
-    /** @return the campaign start date (ISO-8601 string) */
-    public String getDate() { return date; }
+    /** @return the campaign start date */
+    public LocalDate getDate() { return date; }
     /** @param date the campaign start date */
-    public void setDate(String date) { this.date = date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
-    /** @return the fundraising deadline (ISO-8601 string) */
-    public String getDeadline() { return deadline; }
+    /** @return the fundraising deadline */
+    public LocalDate getDeadline() { return deadline; }
     /** @param deadline the fundraising deadline */
-    public void setDeadline(String deadline) { this.deadline = deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
 
     /** @return the campaign category (e.g. "Community", "Education") */
     public String getCategory() { return category; }
