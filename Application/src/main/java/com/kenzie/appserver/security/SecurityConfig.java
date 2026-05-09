@@ -41,8 +41,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // public read access to campaigns and user profiles
+                        // public read access to campaigns, events, and user profiles
                         .requestMatchers(HttpMethod.GET, "/campaigns/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
                         // donations are public so supporters don't need an account (Stripe handles identity)
                         .requestMatchers(HttpMethod.POST, "/campaigns/*/donate").permitAll()

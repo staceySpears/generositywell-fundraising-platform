@@ -8,6 +8,7 @@ import com.kenzie.appserver.repositories.CampaignDao;
 import com.kenzie.appserver.repositories.model.CampaignRecord;
 import com.kenzie.appserver.salesforce.SalesforceService;
 import com.kenzie.appserver.service.model.CampaignStatus;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,10 +23,12 @@ import java.util.UUID;
 public class CampaignService {
 
     private final CampaignDao campaignDao;
-    private final CacheStore cache;
+    private final CacheStore<CampaignRecord> cache;
     private final SalesforceService salesforceService;
 
-    public CampaignService(CampaignDao campaignDao, CacheStore cache, SalesforceService salesforceService) {
+    public CampaignService(CampaignDao campaignDao,
+                           @Qualifier("campaignCache") CacheStore<CampaignRecord> cache,
+                           SalesforceService salesforceService) {
         this.campaignDao = campaignDao;
         this.cache = cache;
         this.salesforceService = salesforceService;
