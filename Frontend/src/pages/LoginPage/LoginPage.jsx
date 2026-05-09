@@ -11,7 +11,10 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname ?? '/dashboard';
+  const fromLocation = location.state?.from;
+  const from = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search ?? ''}${fromLocation.hash ?? ''}`
+    : '/dashboard';
 
   const [serverError, setServerError] = useState('');
 
@@ -27,7 +30,7 @@ export default function LoginPage() {
       await login(values);
       navigate(from, { replace: true });
     } catch (err) {
-      setServerError(err.response?.data?.message ?? 'Invalid email or password. Please try again.');
+      setServerError('Invalid email or password. Please try again.');
     }
   };
 

@@ -130,6 +130,10 @@ public class FundraisingEventService {
         if (request.getOrganizer() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event must have an organizer");
         }
+        if (request.getCapacity() != null && request.getCapacity() < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Capacity must be a positive number (or null for unlimited)");
+        }
         if (request.getEventDate() != null && request.getRegistrationDeadline() != null
                 && request.getRegistrationDeadline().isAfter(request.getEventDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -175,6 +179,22 @@ public class FundraisingEventService {
 
         if (request.getName() == null || request.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event name is required");
+        }
+        if (request.getCapacity() != null && request.getCapacity() < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Capacity must be a positive number (or null for unlimited)");
+        }
+        if (request.getCapacity() != null) {
+            List<Volunteer> current = record.getVolunteers() != null
+                    ? record.getVolunteers() : List.of();
+            long confirmedCount = current.stream()
+                    .filter(v -> RsvpStatus.CONFIRMED.name().equals(v.getRsvpStatus()))
+                    .count();
+            if (request.getCapacity() < confirmedCount) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "New capacity (" + request.getCapacity()
+                                + ") is less than the current confirmed count (" + confirmedCount + ")");
+            }
         }
         if (request.getEventDate() != null && request.getRegistrationDeadline() != null
                 && request.getRegistrationDeadline().isAfter(request.getEventDate())) {

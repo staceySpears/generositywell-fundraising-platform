@@ -74,7 +74,11 @@ export default function CalendarPage() {
                 <div className={styles.itemBody}>
                   <div className={styles.itemHeader}>
                     <span className={styles.eventName}>{event.name}</span>
-                    <span className={`${styles.dot} ${STATUS_DOT[event.status] ?? ''}`} />
+                    <span
+                      className={`${styles.dot} ${STATUS_DOT[event.status] ?? ''}`}
+                      role="img"
+                      aria-label={`Status: ${event.status ?? 'Unknown'}`}
+                    />
                   </div>
                   {event.location && <span className={styles.location}>{event.location}</span>}
                   <div className={styles.itemFooter}>

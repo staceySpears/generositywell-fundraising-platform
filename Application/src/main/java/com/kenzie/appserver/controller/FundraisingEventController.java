@@ -94,8 +94,10 @@ public class FundraisingEventController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<EventResponse> updateEvent(
+            @PathVariable("id") String id,
             @Valid @RequestBody EventUpdateRequest request,
             Authentication authentication) {
+        request.setId(id);
         EventResponse response = eventService.updateEvent(request, authentication.getName());
         return ResponseEntity.ok(response);
     }
@@ -162,6 +164,9 @@ public class FundraisingEventController {
             @PathVariable("id") String id,
             @Valid @RequestBody RsvpRequest request,
             Authentication authentication) {
+        // Override the volunteerId from JWT subject — the server, not the client,
+        // determines who is RSVPing. Name and email are still accepted from the body.
+        request.setVolunteerId(authentication.getName());
         return ResponseEntity.ok(eventService.rsvp(id, request));
     }
 

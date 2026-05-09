@@ -57,10 +57,11 @@ public class UserController {
      * @return 200 with the updated user, or 404 if not found
      */
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@Valid @RequestBody UserUpdateRequest userUpdateRequest) {
-
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable("id") String id,
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
+        userUpdateRequest.setId(id);
         UserResponse userResponse = userService.updateUser(userUpdateRequest);
-
         return ResponseEntity.ok(userResponse);
     }
 

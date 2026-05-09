@@ -5,9 +5,13 @@ import axios from 'axios';
  *
  * In development, Vite proxies /api/* → http://localhost:5001/*.
  * In production set VITE_API_BASE_URL to your API domain.
+ *
+ * A 10-second request timeout is applied globally. Override per-request by
+ * passing { timeout: <ms> } in the individual call's config object.
  */
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
+  timeout: 10_000,
 });
 
 // Attach the JWT on every request if one is stored.
