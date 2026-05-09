@@ -200,7 +200,7 @@ class CampaignServiceTest {
         when(campaignDao.findById("camp-3")).thenReturn(Optional.of(record));
         ArgumentCaptor<CampaignRecord> captor = ArgumentCaptor.forClass(CampaignRecord.class);
 
-        CampaignResponse response = campaignService.addDonation("camp-3", 10000L);
+        CampaignResponse response = campaignService.addDonation("camp-3", 10000L, null);
 
         verify(campaignDao).save(captor.capture());
         assertEquals(60000L, captor.getValue().getCurrentAmount());
@@ -218,7 +218,7 @@ class CampaignServiceTest {
         when(campaignDao.findById("camp-4")).thenReturn(Optional.of(record));
         ArgumentCaptor<CampaignRecord> captor = ArgumentCaptor.forClass(CampaignRecord.class);
 
-        campaignService.addDonation("camp-4", 10000L);
+        campaignService.addDonation("camp-4", 10000L, null);
 
         verify(campaignDao).save(captor.capture());
         assertEquals(CampaignStatus.FUNDED.name(), captor.getValue().getStatus());
@@ -235,7 +235,7 @@ class CampaignServiceTest {
         when(campaignDao.findById("camp-5")).thenReturn(Optional.of(record));
         ArgumentCaptor<CampaignRecord> captor = ArgumentCaptor.forClass(CampaignRecord.class);
 
-        CampaignResponse response = campaignService.addDonation("camp-5", 20000L);
+        CampaignResponse response = campaignService.addDonation("camp-5", 20000L, null);
 
         verify(campaignDao).save(captor.capture());
         assertEquals(215000L, captor.getValue().getCurrentAmount());
@@ -253,7 +253,7 @@ class CampaignServiceTest {
         when(campaignDao.findById("camp-6")).thenReturn(Optional.of(record));
         ArgumentCaptor<CampaignRecord> captor = ArgumentCaptor.forClass(CampaignRecord.class);
 
-        campaignService.addDonation("camp-6", 5000L);
+        campaignService.addDonation("camp-6", 5000L, null);
 
         verify(campaignDao).save(captor.capture());
         assertEquals(CampaignStatus.FUNDED.name(), captor.getValue().getStatus());
@@ -264,7 +264,7 @@ class CampaignServiceTest {
     void addDonation_nullCampaignId_throwsBadRequest() {
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation(null, 1000L)
+                () -> campaignService.addDonation(null, 1000L, null)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verify(campaignDao, never()).findById(any());
@@ -274,7 +274,7 @@ class CampaignServiceTest {
     void addDonation_blankCampaignId_throwsBadRequest() {
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation("  ", 1000L)
+                () -> campaignService.addDonation("  ", 1000L, null)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verify(campaignDao, never()).findById(any());
@@ -287,7 +287,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation("camp-null-amt", null)
+                () -> campaignService.addDonation("camp-null-amt", null, null)
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -301,7 +301,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation("camp-zero-amt", 0L)
+                () -> campaignService.addDonation("camp-zero-amt", 0L, null)
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -315,7 +315,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation("camp-neg-amt", -500L)
+                () -> campaignService.addDonation("camp-neg-amt", -500L, null)
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -332,7 +332,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.addDonation("camp-7", 1000L)
+                () -> campaignService.addDonation("camp-7", 1000L, null)
         );
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());

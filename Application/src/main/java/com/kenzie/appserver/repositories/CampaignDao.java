@@ -88,4 +88,19 @@ public class CampaignDao {
                 .filter(r -> r.getUser() != null && userId.equals(r.getUser().getId()))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Returns all campaigns where the given user has a {@link com.kenzie.appserver.service.model.Supporter}
+     * entry (i.e. has made at least one tracked donation).
+     * Uses a client-side filter over a full table scan.
+     *
+     * @param donorId the donor's user ID
+     * @return list of campaigns the user has donated to
+     */
+    public List<CampaignRecord> findByDonorId(String donorId) {
+        return findAll().stream()
+                .filter(r -> r.getSupporters() != null && r.getSupporters().stream()
+                        .anyMatch(s -> donorId.equals(s.getId())))
+                .collect(Collectors.toList());
+    }
 }

@@ -126,6 +126,29 @@ public class FundraisingEventService {
                 .toList();
     }
 
+    /**
+     * Returns all events where the given user has an active (non-CANCELLED) RSVP,
+     * sorted by event date ascending (soonest first, undated events last).
+     *
+     * @param volunteerId the volunteer's user ID
+     * @return list of matching event responses
+     * @throws ResponseStatusException 400 if volunteerId is blank
+     */
+    public List<EventResponse> getRsvpsByUser(String volunteerId) {
+        if (volunteerId == null || volunteerId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Volunteer ID cannot be empty");
+        }
+        return eventDao.findByVolunteerId(volunteerId).stream()
+                .map(this::recordToResponse)
+                .sorted((a, b) -> {
+                    if (a.getEventDate() == null && b.getEventDate() == null) return 0;
+                    if (a.getEventDate() == null) return 1;
+                    if (b.getEventDate() == null) return -1;
+                    return a.getEventDate().compareTo(b.getEventDate());
+                })
+                .toList();
+    }
+
     // ── Writes ─────────────────────────────────────────────────────────────────
 
     /**

@@ -60,6 +60,123 @@
   border-style: dashed;
 }
 
+/* ── Profile card header (title + edit button) ─────────────── */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.cardHeader .cardTitle {
+  margin-bottom: 0;
+}
+
+.editBtn {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.editBtn:hover {
+  text-decoration: underline;
+}
+
+/* ── Inline profile edit form ──────────────────────────────── */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.input {
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  padding: 0.5rem 0.625rem;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.inputError {
+  border-color: var(--color-error);
+}
+
+.fieldError {
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+.serverError {
+  font-size: 0.8125rem;
+  color: var(--color-error);
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.saveBtn {
+  flex: 1;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.cancelBtn:hover {
+  border-color: var(--color-text-muted);
+}
+
 .itemList {
   list-style: none;
   display: flex;

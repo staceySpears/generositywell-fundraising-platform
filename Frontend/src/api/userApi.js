@@ -59,3 +59,25 @@ export const getUserEvents = async (id) => {
   const { data } = await client.get(`/users/${id}/events`);
   return data;
 };
+
+/**
+ * GET /users/:id/donations
+ * Returns the user's giving history (one entry per campaign donated to).
+ * @param {string} id
+ * @returns {Promise<Array<{campaignId, campaignName, amountInCents, donationDate}>>}
+ */
+export const getUserDonations = async (id) => {
+  const { data } = await client.get(`/users/${id}/donations`);
+  return data;
+};
+
+/**
+ * GET /users/:id/rsvps
+ * Returns all events the user has an active RSVP for.
+ * @param {string} id
+ * @returns {Promise<Array>}
+ */
+export const getUserRsvps = async (id) => {
+  const { data } = await client.get(`/users/${id}/rsvps`);
+  return data;
+};

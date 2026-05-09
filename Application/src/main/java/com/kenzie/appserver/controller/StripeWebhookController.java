@@ -69,7 +69,8 @@ public class StripeWebhookController {
 
                 if (campaignId != null) {
                     try {
-                        campaignService.addDonation(campaignId, amount);
+                        // donorId is null for webhook path — no authenticated user context
+                        campaignService.addDonation(campaignId, amount, null);
                         log.info("Donation recorded: campaign={} amount={}", campaignId, amount);
                     } catch (Exception e) {
                         // Log but return 200 — Stripe retries on non-2xx, and the payment already succeeded
