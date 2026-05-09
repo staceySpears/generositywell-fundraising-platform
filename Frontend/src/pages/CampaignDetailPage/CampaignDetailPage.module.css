@@ -231,3 +231,47 @@
   padding: 1.25rem;
   text-align: center;
 }
+
+/* ── QR code card ─────────────────────────────────────────── */
+.qrCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qrTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+
+.qrCode {
+  line-height: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.qrDownloadBtn {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.qrDownloadBtn:hover {
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-primary);
+}
