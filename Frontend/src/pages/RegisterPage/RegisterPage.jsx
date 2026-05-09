@@ -1,19 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import * as Label from '@radix-ui/react-label';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { registerSchema as schema } from '../../schemas/auth.js';
 import styles from './RegisterPage.module.css';
-
-const schema = z.object({
-  name:     z.string().min(2, 'Name must be at least 2 characters'),
-  email:    z.string().email('Enter a valid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters'),
-});
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();

@@ -19,13 +19,16 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401, clear stored credentials so the user is forced back to /login.
+// On 401, clear stored credentials and dispatch an event so AuthProvider
+// can call logout() and React Router can redirect to /login.
+// We can't import AuthContext here (circular dep), so we use a custom event.
 client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('gw_token');
       localStorage.removeItem('gw_userId');
+      window.dispatchEvent(new CustomEvent('gw:auth:expired'));
     }
     return Promise.reject(error);
   }

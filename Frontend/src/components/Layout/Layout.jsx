@@ -34,7 +34,7 @@ export default function Layout() {
           ) : (
             <>
               <li><NavLink to="/login"    className={({ isActive }) => isActive ? styles.active : ''}>Log in</NavLink></li>
-              <li><NavLink to="/register" className={`${styles.registerBtn} ${styles.active}`}>Join</NavLink></li>
+              <li><NavLink to="/register" className={({ isActive }) => `${styles.registerBtn}${isActive ? ` ${styles.active}` : ''}`}>Join</NavLink></li>
             </>
           )}
         </ul>

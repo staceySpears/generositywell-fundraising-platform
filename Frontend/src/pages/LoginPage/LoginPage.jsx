@@ -1,16 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { loginSchema as schema } from '../../schemas/auth.js';
 import * as Label from '@radix-ui/react-label';
 import { useAuth } from '../../context/AuthContext.jsx';
 import styles from './LoginPage.module.css';
-
-const schema = z.object({
-  email:    z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
 
 export default function LoginPage() {
   const { login } = useAuth();
