@@ -1,0 +1,194 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.state      { color: var(--color-text-muted); margin-top: 2rem; }
+.stateError { color: var(--color-error); margin-top: 2rem; }
+
+/* ── Main content ─────────────────────────────────────────── */
+.meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 99px;
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+
+.status.active { background-color: rgba(74, 222, 128, 0.15); color: var(--color-success); }
+.status.funded { background-color: rgba(168, 85, 247, 0.15); color: var(--color-primary); }
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.organizer {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.description {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.dates {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.progressCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.raised {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.125rem;
+}
+
+.goal {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+
+.progressBar {
+  height: 8px;
+  background-color: var(--color-surface-alt);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.pct {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Donate form ──────────────────────────────────────────── */
+.donateForm {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.donateTitle {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.field { display: flex; flex-direction: column; gap: 0.375rem; }
+.label { font-size: 0.875rem; font-weight: 500; }
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.inputWrapper:focus-within { border-color: var(--color-primary); }
+
+.currency {
+  padding: 0.625rem 0.625rem 0.625rem 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  user-select: none;
+}
+
+.input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  padding: 0.625rem 0.75rem 0.625rem 0;
+  font-size: 0.9375rem;
+  outline: none;
+  width: 100%;
+}
+
+.inputError + .input,
+.inputWrapper:has(.inputError) { border-color: var(--color-error); }
+
+.error        { font-size: 0.75rem; color: var(--color-error); }
+.serverError  { font-size: 0.8125rem; color: var(--color-error); }
+.serverSuccess { font-size: 0.8125rem; color: var(--color-success); }
+
+.donateBtn {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.donateBtn:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+.donateBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.closedNotice {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+}

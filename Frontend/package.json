@@ -1,28 +1,29 @@
 {
-  "name": "capstone-static-website",
-  "description": "Website for the SEBD capstone project",
-  "version": "1.0.0",
-  "license": "UNLICENSED",
-  "main": "js/index.js",
-  "npm-pretty-much": {
-    "consumeLibCommonJs": true,
-    "runTest": "never"
-  },
+  "name": "generositywell-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "webpack -p --mode=production --devtool=source-map",
-    "start": "webpack-dev-server -d --mode=development --hot --inline"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^0.21.1",
-    "clean-webpack-plugin": "^4.0.0",
-    "toastify-js": "^1.11.2",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.2.1"
+    "@hookform/resolvers": "^3.9.0",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-toast": "^1.2.4",
+    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query-devtools": "^5.62.0",
+    "axios": "^1.7.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.0",
+    "react-router-dom": "^6.28.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^6.4.1",
-    "html-webpack-plugin": "4"
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.5"
   }
 }
