@@ -1,0 +1,50 @@
+Resources:
+  AuditLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "AuditLog"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        # Enable PITR on the audit log — the compliance record must be recoverable.
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: "logId"
+          AttributeType: "S"
+        - AttributeName: "entityId"
+          AttributeType: "S"
+        - AttributeName: "actorId"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "S"   # ISO-8601 string; sorts correctly lexicographically
+      KeySchema:
+        - AttributeName: "logId"
+          KeyType: "HASH"      # UUID — prevents hot partitions on busy entities
+      GlobalSecondaryIndexes:
+        - IndexName: "EntityHistoryIndex"
+          KeySchema:
+            - AttributeName: "entityId"
+              KeyType: "HASH"
+            - AttributeName: "timestamp"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+        - IndexName: "ActorHistoryIndex"
+          KeySchema:
+            - AttributeName: "actorId"
+              KeyType: "HASH"
+            - AttributeName: "timestamp"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+
+# Notes:
+#  - PITR is ENABLED (unlike other tables) — the audit log is the compliance record.
+#  - Records must never be deleted; no TTL is set on this table.
+#  - Add a third GSI on (entityType, timestamp) when you build the admin analytics
+#    dashboard and need "all DONATION events platform-wide in the last 30 days".
+#
+# Deploy:
+#   aws cloudformation create-stack \
+#     --stack-name audit-log \
+#     --template-body file://AuditLogTable.yml \
+#     --capabilities CAPABILITY_IAM
