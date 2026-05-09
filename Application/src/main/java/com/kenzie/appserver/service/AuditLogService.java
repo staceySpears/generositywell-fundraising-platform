@@ -42,6 +42,12 @@ public class AuditLogService {
     private final AuditLogDao auditLogDao;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param auditLogDao  DynamoDB DAO for audit log persistence
+     * @param objectMapper Jackson mapper used to serialise audit payloads to JSON
+     */
     public AuditLogService(AuditLogDao auditLogDao, ObjectMapper objectMapper) {
         this.auditLogDao = auditLogDao;
         this.objectMapper = objectMapper;
@@ -106,20 +112,33 @@ public class AuditLogService {
                          AuditAction action,
                          String actorId,
                          Object payloadObj) {
-        try {
-            AuditLogRecord record = new AuditLogRecord();
-            record.setLogId(UUID.randomUUID().toString());
-            record.setEntityType(entityType.name());
-            record.setEntityId(entityId);
-            record.setAction(action.name());
-            record.setActorId(actorId);
-            record.setTimestamp(Instant.now());
-            record.setPayload(objectMapper.writeValueAsString(payloadObj));
+        // Build the record outside any try-catch so that errors in enum formatting
+        // or field assignment surface as plain RuntimeExceptions, not as mislabelled
+        // serialisation or persistence failures.
+        AuditLogRecord record = new AuditLogRecord();
+        record.setLogId(UUID.randomUUID().toString());
+        record.setEntityType(entityType.name());
+        record.setEntityId(entityId);
+        record.setAction(action.name());
+        record.setActorId(actorId);
+        record.setTimestamp(Instant.now());
 
-            auditLogDao.save(record);
+        // Serialisation failure: caller supplied an un-serialisable payload object.
+        try {
+            record.setPayload(objectMapper.writeValueAsString(payloadObj));
         } catch (JsonProcessingException e) {
             throw new AuditLogException(
                     "Failed to serialise audit payload for action " + action, e);
+        }
+
+        // Persistence failure: DynamoDbException or other DAO-layer RuntimeException.
+        // Wrapping ensures logAsync's catch block always sees AuditLogException,
+        // preventing a raw DynamoDbException from silently killing the executor thread.
+        try {
+            auditLogDao.save(record);
+        } catch (RuntimeException e) {
+            throw new AuditLogException(
+                    "Failed to persist audit log record for action " + action, e);
         }
     }
 

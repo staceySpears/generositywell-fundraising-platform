@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +31,14 @@ public class CampaignService {
     private final SalesforceService salesforceService;
     private final AuditLogService auditLogService;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param campaignDao       DynamoDB DAO for campaign persistence
+     * @param cache             Caffeine-backed cache keyed by campaign ID
+     * @param salesforceService async Salesforce CRM sync for campaigns and donations
+     * @param auditLogService   append-only audit trail writer
+     */
     public CampaignService(CampaignDao campaignDao,
                            @Qualifier("campaignCache") CacheStore<CampaignRecord> cache,
                            SalesforceService salesforceService,
@@ -102,7 +111,7 @@ public class CampaignService {
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                 AuditAction.CAMPAIGN_CREATED, record.getUser().getId(),
-                Map.of("name", record.getName(), "goalAmount", record.getGoalAmount()));
+                auditPayload("name", record.getName(), "goalAmount", record.getGoalAmount()));
 
         return recordToResponse(record);
     }
@@ -118,6 +127,12 @@ public class CampaignService {
      *         403 if the caller is not the owner, 409 if the campaign is closed
      */
     public CampaignResponse updateCampaign(CampaignUpdateRequest request, String requestingUserId) {
+        if (request == null || request.getId() == null || request.getId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID is required");
+        }
+        if (requestingUserId == null || requestingUserId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Requesting user ID is required");
+        }
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
@@ -127,13 +142,21 @@ public class CampaignService {
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot update a closed campaign");
         }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign name is required");
+        }
+        if (request.getGoalAmount() == null || request.getGoalAmount() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Goal amount must be a positive value");
+        }
 
         Long oldGoalAmount = record.getGoalAmount();
         record.setName(request.getName());
         record.setDate(request.getDate());
         record.setDeadline(request.getDeadline());
         record.setCategory(request.getCategory());
-        record.setUser(request.getUser());
+        // Deliberately do NOT call record.setUser() — the persisted owner is immutable
+        // after creation. The ownership check above already ensures only the original
+        // creator reaches this point, so the stored user field is already correct.
         record.setSupporters(request.getSupporters());
         record.setAddress(request.getAddress());
         record.setDescription(request.getDescription());
@@ -145,11 +168,11 @@ public class CampaignService {
         if (goalChanged) {
             auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                     AuditAction.GOAL_UPDATED, requestingUserId,
-                    Map.of("oldGoal", oldGoalAmount, "newGoal", request.getGoalAmount()));
+                    auditPayload("oldGoal", oldGoalAmount, "newGoal", request.getGoalAmount()));
         } else {
             auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                     AuditAction.CAMPAIGN_UPDATED, requestingUserId,
-                    Map.of("name", record.getName()));
+                    auditPayload("name", record.getName()));
         }
 
         return recordToResponse(record);
@@ -199,7 +222,7 @@ public class CampaignService {
         String actorId = record.getUser() != null ? record.getUser().getId() : "system";
         auditLogService.logSync(AuditEntityType.DONATION, campaignId,
                 AuditAction.PAYMENT_SUCCEEDED, actorId,
-                Map.of("amountInCents", amountInCents, "newTotalCents", newTotal,
+                auditPayload("amountInCents", amountInCents, "newTotalCents", newTotal,
                         "status", record.getStatus()));
 
         return recordToResponse(record);
@@ -232,7 +255,7 @@ public class CampaignService {
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
                 AuditAction.CAMPAIGN_CLOSED, requestingUserId,
-                Map.of("finalStatus", CampaignStatus.CLOSED.name()));
+                auditPayload("finalStatus", CampaignStatus.CLOSED.name()));
 
         return recordToResponse(record);
     }
@@ -243,21 +266,25 @@ public class CampaignService {
      * @param campaignId       the campaign to delete
      * @param requestingUserId the user ID from the authenticated JWT
      * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
-     *         404 if not found
+     *         404 if not found, 403 if the caller is not the owner
      */
     public void deleteCampaign(String campaignId, String requestingUserId) {
         if (campaignId == null || campaignId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
         }
-        if (!campaignDao.existsById(campaignId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found");
+        CampaignRecord record = campaignDao.findById(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
+
+        if (record.getUser() == null || !Objects.equals(requestingUserId, record.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the campaign creator can delete this campaign");
         }
+
         campaignDao.deleteById(campaignId);
         cache.evict(campaignId);
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
                 AuditAction.CAMPAIGN_DELETED, requestingUserId,
-                Map.of("campaignId", campaignId));
+                auditPayload("campaignId", campaignId));
     }
 
     /**
@@ -271,6 +298,13 @@ public class CampaignService {
                 .toList();
     }
 
+    /**
+     * Maps a {@link CampaignRecord} to a {@link CampaignResponse}, computing
+     * {@code percentFunded} when both goal and current amounts are available.
+     *
+     * @param record the persisted campaign record
+     * @return the API response view of the campaign
+     */
     private CampaignResponse recordToResponse(CampaignRecord record) {
         CampaignResponse response = new CampaignResponse();
         response.setId(record.getId());
@@ -292,5 +326,27 @@ public class CampaignService {
         }
 
         return response;
+    }
+
+    /**
+     * Builds a null-safe payload map for audit log entries.
+     * Unlike {@link Map#of}, this helper accepts {@code null} values — important for
+     * nullable fields such as {@code Long goalAmount} that may not yet be set on a record.
+     *
+     * @param keysAndValues alternating key (String) / value (Object) pairs
+     * @return a mutable HashMap containing the provided pairs
+     */
+    private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        if (keysAndValues == null || keysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("auditPayload requires an even number of alternating key/value pairs");
+        }
+        Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
+        for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
+            if (!(keysAndValues[i] instanceof String key)) {
+                throw new IllegalArgumentException("auditPayload key at index " + i + " must be a String");
+            }
+            map.put(key, keysAndValues[i + 1]);
+        }
+        return map;
     }
 }

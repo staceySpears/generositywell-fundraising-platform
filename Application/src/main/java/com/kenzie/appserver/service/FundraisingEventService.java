@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,13 @@ public class FundraisingEventService {
     private final CacheStore<FundraisingEventRecord> cache;
     private final AuditLogService auditLogService;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param eventDao        DynamoDB DAO for fundraising event persistence
+     * @param cache           Caffeine-backed cache keyed by {@code "event:" + eventId}
+     * @param auditLogService append-only audit trail writer
+     */
     public FundraisingEventService(FundraisingEventDao eventDao,
                                    @Qualifier("eventCache") CacheStore<FundraisingEventRecord> cache,
                                    AuditLogService auditLogService) {
@@ -144,7 +152,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
                 AuditAction.EVENT_CREATED, request.getOrganizer().getId(),
-                Map.of("name", record.getName(), "campaignId", record.getCampaignId()));
+                auditPayload("name", record.getName(), "campaignId", record.getCampaignId()));
 
         return recordToResponse(record);
     }
@@ -165,6 +173,9 @@ public class FundraisingEventService {
         requireOrganizer(record, requestingUserId);
         requireModifiable(record);
 
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event name is required");
+        }
         if (request.getEventDate() != null && request.getRegistrationDeadline() != null
                 && request.getRegistrationDeadline().isAfter(request.getEventDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -182,7 +193,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
                 AuditAction.EVENT_UPDATED, requestingUserId,
-                Map.of("name", record.getName()));
+                auditPayload("name", record.getName()));
 
         return recordToResponse(record);
     }
@@ -212,7 +223,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_PUBLISHED, requestingUserId,
-                Map.of("status", EventStatus.SCHEDULED.name()));
+                auditPayload("status", EventStatus.SCHEDULED.name()));
 
         return recordToResponse(record);
     }
@@ -238,7 +249,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_CANCELLED, requestingUserId,
-                Map.of("status", EventStatus.CANCELLED.name()));
+                auditPayload("status", EventStatus.CANCELLED.name()));
 
         return recordToResponse(record);
     }
@@ -269,7 +280,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_DELETED, requestingUserId,
-                Map.of("eventId", eventId));
+                auditPayload("eventId", eventId));
     }
 
     // ── RSVP ──────────────────────────────────────────────────────────────────
@@ -336,7 +347,7 @@ public class FundraisingEventService {
                 : AuditAction.RSVP_WAITLISTED;
         auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                 rsvpAction, request.getVolunteerId(),
-                Map.of("volunteerId", request.getVolunteerId(), "rsvpStatus", status));
+                auditPayload("volunteerId", request.getVolunteerId(), "rsvpStatus", status));
 
         return recordToResponse(record);
     }
@@ -388,23 +399,37 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                 AuditAction.RSVP_CANCELLED, volunteerId,
-                Map.of("volunteerId", volunteerId));
+                auditPayload("volunteerId", volunteerId));
 
         promoted.ifPresent(v ->
                 auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                         AuditAction.RSVP_PROMOTED_FROM_WAITLIST, v.getId(),
-                        Map.of("volunteerId", v.getId())));
+                        auditPayload("volunteerId", v.getId())));
 
         return recordToResponse(record);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
+    /**
+     * Loads an event by ID or throws 404 if absent.
+     *
+     * @param eventId the event ID to look up
+     * @return the loaded {@link FundraisingEventRecord}
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
+     */
     private FundraisingEventRecord requireEvent(String eventId) {
         return eventDao.findById(eventId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
     }
 
+    /**
+     * Asserts that {@code requestingUserId} is the organizer of the event, throwing 403 otherwise.
+     *
+     * @param record           the event to check ownership of
+     * @param requestingUserId the user ID from the authenticated JWT
+     * @throws org.springframework.web.server.ResponseStatusException 403 if caller is not the organizer
+     */
     private void requireOrganizer(FundraisingEventRecord record, String requestingUserId) {
         if (record.getOrganizer() == null
                 || !Objects.equals(requestingUserId, record.getOrganizer().getId())) {
@@ -413,6 +438,12 @@ public class FundraisingEventService {
         }
     }
 
+    /**
+     * Asserts that the event is in a modifiable state (not COMPLETED or CANCELLED), throwing 409 otherwise.
+     *
+     * @param record the event to check
+     * @throws org.springframework.web.server.ResponseStatusException 409 if the event cannot be modified
+     */
     private void requireModifiable(FundraisingEventRecord record) {
         String status = record.getStatus();
         if (EventStatus.COMPLETED.name().equals(status) || EventStatus.CANCELLED.name().equals(status)) {
@@ -427,6 +458,13 @@ public class FundraisingEventService {
         return existing == null ? new ArrayList<>() : new ArrayList<>(existing);
     }
 
+    /**
+     * Maps a {@link FundraisingEventRecord} to an {@link EventResponse}, computing
+     * confirmed/waitlisted counts and {@code spotsRemaining} when capacity is set.
+     *
+     * @param record the persisted event record
+     * @return the API response view of the event
+     */
     private EventResponse recordToResponse(FundraisingEventRecord record) {
         List<Volunteer> volunteers = record.getVolunteers() != null
                 ? record.getVolunteers() : List.of();
@@ -459,5 +497,26 @@ public class FundraisingEventService {
         }
 
         return response;
+    }
+
+    /**
+     * Builds a null-safe payload map for audit log entries.
+     * Unlike {@link Map#of}, this helper accepts {@code null} values.
+     *
+     * @param keysAndValues alternating key (String) / value (Object) pairs
+     * @return a mutable HashMap containing the provided pairs
+     */
+    private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        if (keysAndValues == null || keysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("auditPayload requires an even number of alternating key/value pairs");
+        }
+        Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
+        for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
+            if (!(keysAndValues[i] instanceof String key)) {
+                throw new IllegalArgumentException("auditPayload key at index " + i + " must be a String");
+            }
+            map.put(key, keysAndValues[i + 1]);
+        }
+        return map;
     }
 }

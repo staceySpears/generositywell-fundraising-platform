@@ -494,19 +494,39 @@ class CampaignServiceTest {
     @Test
     void deleteCampaign_notFound_throwsNotFound() {
         String id = UUID.randomUUID().toString();
-        when(campaignDao.existsById(id)).thenReturn(false);
+        when(campaignDao.findById(id)).thenReturn(Optional.empty());
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
                 () -> campaignService.deleteCampaign(id, USER_ID)
         );
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(campaignDao, never()).deleteById(any());
+        verify(cache, never()).evict(any());
     }
 
     @Test
-    void deleteCampaign_found_deletesAndEvictsCache() {
+    void deleteCampaign_notOwner_throwsForbidden() {
         String id = UUID.randomUUID().toString();
-        when(campaignDao.existsById(id)).thenReturn(true);
+        CampaignRecord record = campaignRecord(id);
+        record.setUser(new User("other-user", "Other", "other@example.com"));
+        when(campaignDao.findById(id)).thenReturn(Optional.of(record));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> campaignService.deleteCampaign(id, USER_ID)
+        );
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(campaignDao, never()).deleteById(any());
+        verify(cache, never()).evict(any());
+    }
+
+    @Test
+    void deleteCampaign_owner_deletesAndEvictsCache() {
+        String id = UUID.randomUUID().toString();
+        CampaignRecord record = campaignRecord(id);
+        record.setUser(new User(USER_ID, "Stacey", "stacey@example.com"));
+        when(campaignDao.findById(id)).thenReturn(Optional.of(record));
 
         campaignService.deleteCampaign(id, USER_ID);
 
