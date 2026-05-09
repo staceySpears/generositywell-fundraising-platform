@@ -3,6 +3,7 @@ import Layout from './components/Layout/Layout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 import LandingPage from './pages/LandingPage/LandingPage.jsx';
+import NotFoundPage from './pages/NotFoundPage/NotFoundPage.jsx';
 import LoginPage from './pages/LoginPage/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage.jsx';
@@ -32,6 +33,9 @@ export default function App() {
           <Route path="/events"    element={<EventsPage />} />
           <Route path="/calendar"  element={<CalendarPage />} />
         </Route>
+
+        {/* Catch-all — renders inside Layout so the nav is still visible */}
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

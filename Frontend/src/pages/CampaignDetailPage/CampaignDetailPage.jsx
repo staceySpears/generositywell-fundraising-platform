@@ -2,17 +2,18 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import * as Label from '@radix-ui/react-label';
 import { getCampaignById, donate } from '../../api/campaignApi.js';
+import { donationSchema } from '../../schemas/campaign.js';
 import styles from './CampaignDetailPage.module.css';
 
-const donationSchema = z.object({
-  dollars: z
-    .number({ invalid_type_error: 'Enter an amount' })
-    .positive('Amount must be greater than $0')
-    .max(100_000, 'Maximum single donation is $100,000'),
-});
+/** Formats an ISO date string (e.g. "2026-05-01") as "May 1, 2026". */
+const formatDate = (iso) => {
+  if (!iso) return '';
+  // Append T00:00 so Date parses as local time, not UTC midnight (which shifts by timezone).
+  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    .format(new Date(`${iso}T00:00`));
+};
 
 const formatDollars = (cents) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
@@ -72,7 +73,7 @@ export default function CampaignDetailPage() {
 
         {campaign.date && campaign.deadline && (
           <p className={styles.dates}>
-            {campaign.date} → {campaign.deadline}
+            {formatDate(campaign.date)} → {formatDate(campaign.deadline)}
           </p>
         )}
       </section>
@@ -105,7 +106,10 @@ export default function CampaignDetailPage() {
                   step="1"
                   placeholder="25"
                   className={`${styles.input} ${errors.dollars ? styles.inputError : ''}`}
-                  {...register('dollars', { valueAsNumber: true })}
+                  {...register('dollars', {
+                    valueAsNumber: true,
+                    onChange: () => mutation.isSuccess && mutation.reset(),
+                  })}
                 />
               </div>
               {errors.dollars && <span className={styles.error}>{errors.dollars.message}</span>}
