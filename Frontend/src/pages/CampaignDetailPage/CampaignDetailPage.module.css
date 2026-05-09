@@ -268,7 +268,9 @@
   font-size: 0.875rem;
   color: var(--color-text);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
 .qrDownloadBtn:hover {
