@@ -83,7 +83,7 @@ This project demonstrates how a modern, cloud-native application can seamlessly 
 | `Application` | Core Spring Boot API. Handles routing, request validation, Caffeine caching, and observability. Connects directly to DynamoDB via AWS SDK v2 Enhanced Client. |
 | `ServiceLambda` | Reserved for Phase 4 — will house the Stripe payment webhook handler. Processes incoming Stripe events asynchronously and writes donation records to DynamoDB and Salesforce. |
 | `ServiceLambdaModel` | Shared domain models used across the Lambda boundary. Will be slimmed down to webhook-specific DTOs in Phase 4. |
-| `ServiceLambdaJavaClient` | Being removed in Phase 1 completion. The Spring Boot app no longer routes through a Lambda proxy for persistence. |
+| `ServiceLambdaJavaClient` | Removed in Phase 1. The Spring Boot app connects directly to DynamoDB via the Enhanced Client — no Lambda proxy. Module retained in the repo tree but excluded from Application dependencies. |
 | `Frontend` | React + Vite SPA. Component-based UI consuming the Spring Boot REST API via Axios. |
 | `IntegrationTests` | Cross-module integration test suites backed by Testcontainers. |
 | `Utilities` | Shared helper functions and build configurations used across the project. |
@@ -212,7 +212,6 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 - Add `@Valid` + `@NotBlank` / `@NotNull` to all request DTOs
 - Migrate `date` fields from `String` to `LocalDate`
 - Migrate `CacheStore` from Guava to Caffeine; unify to a single typed cache
-- Remove `ServiceLambdaJavaClient` from Application dependencies
 
 ### Phase 3 — Feature Completion
 
@@ -234,7 +233,7 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 
 ### Phase 5 — Production Hardening
 
-- GitHub Actions CI/CD — build, test, deploy on merge to main
+- ✅ GitHub Actions CI — build and unit tests run on every PR and push to main
 - AWS S3 + CloudFront for frontend hosting
 - API Gateway — rate limiting, CORS, auth header validation
 - Playwright or Cypress E2E tests covering the critical donor flow
