@@ -31,6 +31,14 @@ public class CampaignService {
     private final SalesforceService salesforceService;
     private final AuditLogService auditLogService;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param campaignDao       DynamoDB DAO for campaign persistence
+     * @param cache             Caffeine-backed cache keyed by campaign ID
+     * @param salesforceService async Salesforce CRM sync for campaigns and donations
+     * @param auditLogService   append-only audit trail writer
+     */
     public CampaignService(CampaignDao campaignDao,
                            @Qualifier("campaignCache") CacheStore<CampaignRecord> cache,
                            SalesforceService salesforceService,
@@ -290,6 +298,13 @@ public class CampaignService {
                 .toList();
     }
 
+    /**
+     * Maps a {@link CampaignRecord} to a {@link CampaignResponse}, computing
+     * {@code percentFunded} when both goal and current amounts are available.
+     *
+     * @param record the persisted campaign record
+     * @return the API response view of the campaign
+     */
     private CampaignResponse recordToResponse(CampaignRecord record) {
         CampaignResponse response = new CampaignResponse();
         response.setId(record.getId());

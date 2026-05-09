@@ -42,6 +42,13 @@ public class FundraisingEventService {
     private final CacheStore<FundraisingEventRecord> cache;
     private final AuditLogService auditLogService;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param eventDao        DynamoDB DAO for fundraising event persistence
+     * @param cache           Caffeine-backed cache keyed by {@code "event:" + eventId}
+     * @param auditLogService append-only audit trail writer
+     */
     public FundraisingEventService(FundraisingEventDao eventDao,
                                    @Qualifier("eventCache") CacheStore<FundraisingEventRecord> cache,
                                    AuditLogService auditLogService) {
@@ -404,11 +411,25 @@ public class FundraisingEventService {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
+    /**
+     * Loads an event by ID or throws 404 if absent.
+     *
+     * @param eventId the event ID to look up
+     * @return the loaded {@link FundraisingEventRecord}
+     * @throws org.springframework.web.server.ResponseStatusException 404 if not found
+     */
     private FundraisingEventRecord requireEvent(String eventId) {
         return eventDao.findById(eventId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
     }
 
+    /**
+     * Asserts that {@code requestingUserId} is the organizer of the event, throwing 403 otherwise.
+     *
+     * @param record           the event to check ownership of
+     * @param requestingUserId the user ID from the authenticated JWT
+     * @throws org.springframework.web.server.ResponseStatusException 403 if caller is not the organizer
+     */
     private void requireOrganizer(FundraisingEventRecord record, String requestingUserId) {
         if (record.getOrganizer() == null
                 || !Objects.equals(requestingUserId, record.getOrganizer().getId())) {
@@ -417,6 +438,12 @@ public class FundraisingEventService {
         }
     }
 
+    /**
+     * Asserts that the event is in a modifiable state (not COMPLETED or CANCELLED), throwing 409 otherwise.
+     *
+     * @param record the event to check
+     * @throws org.springframework.web.server.ResponseStatusException 409 if the event cannot be modified
+     */
     private void requireModifiable(FundraisingEventRecord record) {
         String status = record.getStatus();
         if (EventStatus.COMPLETED.name().equals(status) || EventStatus.CANCELLED.name().equals(status)) {
@@ -431,6 +458,13 @@ public class FundraisingEventService {
         return existing == null ? new ArrayList<>() : new ArrayList<>(existing);
     }
 
+    /**
+     * Maps a {@link FundraisingEventRecord} to an {@link EventResponse}, computing
+     * confirmed/waitlisted counts and {@code spotsRemaining} when capacity is set.
+     *
+     * @param record the persisted event record
+     * @return the API response view of the event
+     */
     private EventResponse recordToResponse(FundraisingEventRecord record) {
         List<Volunteer> volunteers = record.getVolunteers() != null
                 ? record.getVolunteers() : List.of();

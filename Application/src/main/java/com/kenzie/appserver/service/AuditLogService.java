@@ -42,6 +42,12 @@ public class AuditLogService {
     private final AuditLogDao auditLogDao;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs the service with its required collaborators.
+     *
+     * @param auditLogDao  DynamoDB DAO for audit log persistence
+     * @param objectMapper Jackson mapper used to serialise audit payloads to JSON
+     */
     public AuditLogService(AuditLogDao auditLogDao, ObjectMapper objectMapper) {
         this.auditLogDao = auditLogDao;
         this.objectMapper = objectMapper;
