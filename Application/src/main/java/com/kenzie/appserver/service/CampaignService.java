@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public class CampaignService {
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                 AuditAction.CAMPAIGN_CREATED, record.getUser().getId(),
-                Map.of("name", record.getName(), "goalAmount", record.getGoalAmount()));
+                auditPayload("name", record.getName(), "goalAmount", record.getGoalAmount()));
 
         return recordToResponse(record);
     }
@@ -145,11 +146,11 @@ public class CampaignService {
         if (goalChanged) {
             auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                     AuditAction.GOAL_UPDATED, requestingUserId,
-                    Map.of("oldGoal", oldGoalAmount, "newGoal", request.getGoalAmount()));
+                    auditPayload("oldGoal", oldGoalAmount, "newGoal", request.getGoalAmount()));
         } else {
             auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
                     AuditAction.CAMPAIGN_UPDATED, requestingUserId,
-                    Map.of("name", record.getName()));
+                    auditPayload("name", record.getName()));
         }
 
         return recordToResponse(record);
@@ -199,7 +200,7 @@ public class CampaignService {
         String actorId = record.getUser() != null ? record.getUser().getId() : "system";
         auditLogService.logSync(AuditEntityType.DONATION, campaignId,
                 AuditAction.PAYMENT_SUCCEEDED, actorId,
-                Map.of("amountInCents", amountInCents, "newTotalCents", newTotal,
+                auditPayload("amountInCents", amountInCents, "newTotalCents", newTotal,
                         "status", record.getStatus()));
 
         return recordToResponse(record);
@@ -232,7 +233,7 @@ public class CampaignService {
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
                 AuditAction.CAMPAIGN_CLOSED, requestingUserId,
-                Map.of("finalStatus", CampaignStatus.CLOSED.name()));
+                auditPayload("finalStatus", CampaignStatus.CLOSED.name()));
 
         return recordToResponse(record);
     }
@@ -257,7 +258,7 @@ public class CampaignService {
 
         auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
                 AuditAction.CAMPAIGN_DELETED, requestingUserId,
-                Map.of("campaignId", campaignId));
+                auditPayload("campaignId", campaignId));
     }
 
     /**
@@ -292,5 +293,21 @@ public class CampaignService {
         }
 
         return response;
+    }
+
+    /**
+     * Builds a null-safe payload map for audit log entries.
+     * Unlike {@link Map#of}, this helper accepts {@code null} values — important for
+     * nullable fields such as {@code Long goalAmount} that may not yet be set on a record.
+     *
+     * @param keysAndValues alternating key (String) / value (Object) pairs
+     * @return a mutable HashMap containing the provided pairs
+     */
+    private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
+        for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
+            map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return map;
     }
 }

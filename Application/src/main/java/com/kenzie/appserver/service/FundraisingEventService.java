@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -144,7 +145,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
                 AuditAction.EVENT_CREATED, request.getOrganizer().getId(),
-                Map.of("name", record.getName(), "campaignId", record.getCampaignId()));
+                auditPayload("name", record.getName(), "campaignId", record.getCampaignId()));
 
         return recordToResponse(record);
     }
@@ -182,7 +183,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
                 AuditAction.EVENT_UPDATED, requestingUserId,
-                Map.of("name", record.getName()));
+                auditPayload("name", record.getName()));
 
         return recordToResponse(record);
     }
@@ -212,7 +213,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_PUBLISHED, requestingUserId,
-                Map.of("status", EventStatus.SCHEDULED.name()));
+                auditPayload("status", EventStatus.SCHEDULED.name()));
 
         return recordToResponse(record);
     }
@@ -238,7 +239,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_CANCELLED, requestingUserId,
-                Map.of("status", EventStatus.CANCELLED.name()));
+                auditPayload("status", EventStatus.CANCELLED.name()));
 
         return recordToResponse(record);
     }
@@ -269,7 +270,7 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
                 AuditAction.EVENT_DELETED, requestingUserId,
-                Map.of("eventId", eventId));
+                auditPayload("eventId", eventId));
     }
 
     // ── RSVP ──────────────────────────────────────────────────────────────────
@@ -336,7 +337,7 @@ public class FundraisingEventService {
                 : AuditAction.RSVP_WAITLISTED;
         auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                 rsvpAction, request.getVolunteerId(),
-                Map.of("volunteerId", request.getVolunteerId(), "rsvpStatus", status));
+                auditPayload("volunteerId", request.getVolunteerId(), "rsvpStatus", status));
 
         return recordToResponse(record);
     }
@@ -388,12 +389,12 @@ public class FundraisingEventService {
 
         auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                 AuditAction.RSVP_CANCELLED, volunteerId,
-                Map.of("volunteerId", volunteerId));
+                auditPayload("volunteerId", volunteerId));
 
         promoted.ifPresent(v ->
                 auditLogService.logAsync(AuditEntityType.RSVP, eventId,
                         AuditAction.RSVP_PROMOTED_FROM_WAITLIST, v.getId(),
-                        Map.of("volunteerId", v.getId())));
+                        auditPayload("volunteerId", v.getId())));
 
         return recordToResponse(record);
     }
@@ -459,5 +460,20 @@ public class FundraisingEventService {
         }
 
         return response;
+    }
+
+    /**
+     * Builds a null-safe payload map for audit log entries.
+     * Unlike {@link Map#of}, this helper accepts {@code null} values.
+     *
+     * @param keysAndValues alternating key (String) / value (Object) pairs
+     * @return a mutable HashMap containing the provided pairs
+     */
+    private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
+        for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
+            map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return map;
     }
 }

@@ -120,6 +120,13 @@ public class AuditLogService {
         } catch (JsonProcessingException e) {
             throw new AuditLogException(
                     "Failed to serialise audit payload for action " + action, e);
+        } catch (RuntimeException e) {
+            // Catches DynamoDbException and any other unchecked exception from the DAO.
+            // Wrapping here ensures logAsync's catch block always sees AuditLogException,
+            // preventing a raw DynamoDbException from escaping and silently killing the
+            // executor thread.
+            throw new AuditLogException(
+                    "Failed to persist audit log record for action " + action, e);
         }
     }
 
