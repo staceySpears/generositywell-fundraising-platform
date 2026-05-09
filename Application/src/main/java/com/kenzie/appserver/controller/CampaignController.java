@@ -9,9 +9,11 @@ import com.kenzie.appserver.controller.model.PaymentIntentResponse;
 import com.kenzie.appserver.service.CampaignService;
 import com.kenzie.appserver.service.StripeService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
@@ -67,8 +69,14 @@ public class CampaignController {
      */
     @PutMapping("/{campaignId}")
     public ResponseEntity<CampaignResponse> updateCampaign(
+            @PathVariable("campaignId") String campaignId,
             @Valid @RequestBody CampaignUpdateRequest request,
             Authentication authentication) {
+        if (request.getId() != null && !campaignId.equals(request.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Path campaignId must match body id");
+        }
+        request.setId(campaignId);
         CampaignResponse response = campaignService.updateCampaign(request, authentication.getName());
         return ResponseEntity.ok(response);
     }

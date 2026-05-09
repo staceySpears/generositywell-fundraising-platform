@@ -6,6 +6,9 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +19,8 @@ import java.util.stream.Collectors;
  * {@code "id|name|email|rsvpStatus"} and stored in a DynamoDB List ({@code L}).
  * Pipe ({@code |}) was chosen over {@code x} (used by {@link SupporterTypeConverter}) to
  * avoid ambiguity with names that contain the letter 'x'.
+ * Each field is URL-encoded before joining so that pipes inside field values
+ * (e.g. {@code "Jane | Doe"}) are percent-encoded and never mistaken for delimiters.
  */
 public class VolunteerTypeConverter implements AttributeConverter<List<Volunteer>> {
 
@@ -36,10 +41,10 @@ public class VolunteerTypeConverter implements AttributeConverter<List<Volunteer
         List<AttributeValue> items = input.stream()
                 .map(v -> AttributeValue.builder()
                         .s(String.join(DELIMITER,
-                                v.getId(),
-                                v.getName(),
-                                v.getEmail(),
-                                v.getRsvpStatus()))
+                                encode(v.getId()),
+                                encode(v.getName()),
+                                encode(v.getEmail()),
+                                encode(v.getRsvpStatus())))
                         .build())
                 .collect(Collectors.toList());
         return AttributeValue.builder().l(items).build();
@@ -55,11 +60,16 @@ public class VolunteerTypeConverter implements AttributeConverter<List<Volunteer
     public List<Volunteer> transformTo(AttributeValue input) {
         return input.l().stream().map(av -> {
             String[] parts = av.s().split(DELIMITER_REGEX, 4);
+            if (parts.length != 4) {
+                throw new IllegalStateException(
+                        "Corrupt volunteer record — expected 4 pipe-delimited fields, got "
+                                + parts.length + ": " + av.s());
+            }
             Volunteer volunteer = new Volunteer();
-            volunteer.setId(parts[0]);
-            volunteer.setName(parts[1]);
-            volunteer.setEmail(parts[2]);
-            volunteer.setRsvpStatus(parts[3]);
+            volunteer.setId(decode(parts[0]));
+            volunteer.setName(decode(parts[1]));
+            volunteer.setEmail(decode(parts[2]));
+            volunteer.setRsvpStatus(decode(parts[3]));
             return volunteer;
         }).collect(Collectors.toList());
     }
@@ -74,5 +84,13 @@ public class VolunteerTypeConverter implements AttributeConverter<List<Volunteer
     @Override
     public AttributeValueType attributeValueType() {
         return AttributeValueType.L;
+    }
+
+    private static String encode(String value) {
+        return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static String decode(String value) {
+        return value == null ? "" : URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 }

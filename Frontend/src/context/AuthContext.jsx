@@ -8,6 +8,17 @@ import { login as apiLogin, register as apiRegister } from '../api/userApi.js';
 export const AuthContext = createContext(null);
 
 /**
+ * Returns the stored value only when it is a non-empty, non-sentinel string.
+ * Guards against localStorage containing the literal strings "undefined" or "null"
+ * that result from stringifying JS primitives, which would otherwise be truthy.
+ *
+ * @param {string|null} value the raw localStorage value
+ * @returns {string|null} the value or null if it is missing/sentinel
+ */
+const normalizeStored = (value) =>
+  value && value !== 'undefined' && value !== 'null' ? value : null;
+
+/**
  * Provides { token, userId, isAuthenticated, login, register, logout } to the tree.
  *
  * Security note: the JWT is currently stored in localStorage for simplicity.
@@ -21,15 +32,24 @@ export const AuthContext = createContext(null);
  *  - 'gw:auth:expired': fired by the Axios 401 interceptor (same-tab expiry)
  */
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('gw_token'));
-  const [userId, setUserId] = useState(() => localStorage.getItem('gw_userId'));
+  const [token, setToken] = useState(() => normalizeStored(localStorage.getItem('gw_token')));
+  const [userId, setUserId] = useState(() => normalizeStored(localStorage.getItem('gw_userId')));
   const navigate = useNavigate();
 
   // ── Cross-tab sync + interceptor-triggered logout ──────────────────────────
   useEffect(() => {
-    const syncFromStorage = () => {
-      setToken(localStorage.getItem('gw_token'));
-      setUserId(localStorage.getItem('gw_userId'));
+    const syncFromStorage = (event) => {
+      // Ignore storage events for keys unrelated to auth.
+      if (event.key !== null && event.key !== 'gw_token' && event.key !== 'gw_userId') {
+        return;
+      }
+      const newToken = normalizeStored(localStorage.getItem('gw_token'));
+      setToken(newToken);
+      setUserId(normalizeStored(localStorage.getItem('gw_userId')));
+      // If the token was removed in another tab, redirect to login here too.
+      if (!newToken) {
+        navigate('/login', { replace: true });
+      }
     };
 
     const handleExpired = () => {

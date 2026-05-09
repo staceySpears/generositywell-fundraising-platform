@@ -15,7 +15,7 @@ import java.util.Optional;
 @Repository
 public class UserDao {
 
-    private static final String TABLE_NAME = "Users";
+    private static final String TABLE_NAME = "users";
     private static final String EMAIL_INDEX = "email-index";
 
     private final DynamoDbTable<UserRecord> userTable;
@@ -71,7 +71,7 @@ public class UserDao {
     /**
      * Finds a user by email address using the {@code email-index} GSI.
      * O(1) DynamoDB query — replaces the previous O(n) full table scan.
-     * Requires the {@code email-index} GSI to exist on the {@code Users} table
+     * Requires the {@code email-index} GSI to exist on the {@code users} table
      * (see {@code UsersTable.yml}).
      *
      * @param email the email address to search for

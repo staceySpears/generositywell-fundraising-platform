@@ -3,7 +3,7 @@ import styles from './ForgotPasswordPage.module.css';
 
 /**
  * Placeholder — password reset requires a backend email flow (Phase 5).
- * The form is rendered but submission is a no-op until the endpoint exists.
+ * UI-only for now; actual reset submission will be added once the endpoint exists.
  */
 export default function ForgotPasswordPage() {
   return (
