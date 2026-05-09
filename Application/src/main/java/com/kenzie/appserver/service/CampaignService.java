@@ -340,6 +340,13 @@ public class CampaignService {
         }
         return campaignDao.findByUserId(userId).stream()
                 .map(this::recordToResponse)
+                .sorted((a, b) -> {
+                    // Deadline descending — most recent first, nulls last
+                    if (a.getDeadline() == null && b.getDeadline() == null) return 0;
+                    if (a.getDeadline() == null) return 1;
+                    if (b.getDeadline() == null) return -1;
+                    return b.getDeadline().compareTo(a.getDeadline());
+                })
                 .toList();
     }
 

@@ -6,8 +6,11 @@ import com.kenzie.appserver.service.FundraisingEventService;
 import com.kenzie.appserver.service.UserService;
 import com.kenzie.appserver.controller.model.DonationSummaryResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -112,26 +115,44 @@ public class UserController {
     }
 
     /**
-     * {@code GET /users/{id}/donations} — returns the user's giving history.
+     * {@code GET /users/{id}/donations} — returns the authenticated user's giving history.
+     * Callers may only retrieve their own history; a different ID returns 403.
      * One entry per campaign the user has donated to, sorted newest-first.
      *
-     * @param id the user ID
+     * @param id             the user ID (must match the JWT subject)
+     * @param authentication the authenticated principal
      * @return 200 with the list (may be empty)
+     * @throws ResponseStatusException 403 if the caller requests another user's history
      */
     @GetMapping("/{id}/donations")
-    public ResponseEntity<List<DonationSummaryResponse>> getDonationsByUser(@PathVariable("id") String id) {
+    public ResponseEntity<List<DonationSummaryResponse>> getDonationsByUser(
+            @PathVariable("id") String id,
+            Authentication authentication) {
+        if (!id.equals(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You may only view your own donation history");
+        }
         return ResponseEntity.ok(campaignService.getDonationsByUser(id));
     }
 
     /**
-     * {@code GET /users/{id}/rsvps} — returns all events the user has RSVPed to.
+     * {@code GET /users/{id}/rsvps} — returns the authenticated user's RSVP history.
+     * Callers may only retrieve their own RSVPs; a different ID returns 403.
      * Excludes CANCELLED RSVPs. Sorted by event date ascending.
      *
-     * @param id the user ID
+     * @param id             the user ID (must match the JWT subject)
+     * @param authentication the authenticated principal
      * @return 200 with the list (may be empty)
+     * @throws ResponseStatusException 403 if the caller requests another user's RSVPs
      */
     @GetMapping("/{id}/rsvps")
-    public ResponseEntity<List<EventResponse>> getRsvpsByUser(@PathVariable("id") String id) {
+    public ResponseEntity<List<EventResponse>> getRsvpsByUser(
+            @PathVariable("id") String id,
+            Authentication authentication) {
+        if (!id.equals(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You may only view your own RSVP history");
+        }
         return ResponseEntity.ok(eventService.getRsvpsByUser(id));
     }
 

@@ -56,6 +56,10 @@
   color: var(--color-text-muted);
   line-height: 1.6;
 }
+.cardError {
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
 .comingSoon {
   border-style: dashed;
 }

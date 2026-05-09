@@ -44,6 +44,9 @@ public class SecurityConfig {
                         // public read access to campaigns, events, and user profiles
                         .requestMatchers(HttpMethod.GET, "/campaigns/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
+                        // giving history and RSVP history are self-only — must come before the broad users permit
+                        .requestMatchers(HttpMethod.GET, "/users/*/donations").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/users/*/rsvps").authenticated()
                         .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
                         // donations are public so supporters don't need an account (Stripe handles identity)
                         .requestMatchers(HttpMethod.POST, "/campaigns/*/donate").permitAll()

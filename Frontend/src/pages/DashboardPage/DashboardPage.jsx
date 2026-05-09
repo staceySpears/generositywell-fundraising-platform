@@ -27,7 +27,8 @@ const formatDollars = (cents) =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format((cents ?? 0) / 100);
 
 const RSVP_LABEL = { CONFIRMED: '✓ Confirmed', WAITLISTED: '⏳ Waitlisted' };
@@ -44,25 +45,41 @@ export default function DashboardPage() {
     enabled: !!userId,
   });
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+  const {
+    data: campaigns = [],
+    isLoading: campaignsLoading,
+    isError: campaignsError,
+  } = useQuery({
     queryKey: ['users', userId, 'campaigns'],
     queryFn: () => getUserCampaigns(userId),
     enabled: !!userId,
   });
 
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    isError: eventsError,
+  } = useQuery({
     queryKey: ['users', userId, 'events'],
     queryFn: () => getUserEvents(userId),
     enabled: !!userId,
   });
 
-  const { data: donations = [], isLoading: donationsLoading } = useQuery({
+  const {
+    data: donations = [],
+    isLoading: donationsLoading,
+    isError: donationsError,
+  } = useQuery({
     queryKey: ['users', userId, 'donations'],
     queryFn: () => getUserDonations(userId),
     enabled: !!userId,
   });
 
-  const { data: rsvps = [], isLoading: rsvpsLoading } = useQuery({
+  const {
+    data: rsvps = [],
+    isLoading: rsvpsLoading,
+    isError: rsvpsError,
+  } = useQuery({
     queryKey: ['users', userId, 'rsvps'],
     queryFn: () => getUserRsvps(userId),
     enabled: !!userId,
@@ -73,7 +90,7 @@ export default function DashboardPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(profileEditSchema),
     values: user ? { name: user.name, email: user.email } : undefined,
@@ -155,8 +172,12 @@ export default function DashboardPage() {
               )}
 
               <div className={styles.editActions}>
-                <button type="submit" className={styles.saveBtn} disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving…' : 'Save'}
+                <button
+                  type="submit"
+                  className={styles.saveBtn}
+                  disabled={profileMutation.isPending}
+                >
+                  {profileMutation.isPending ? 'Saving…' : 'Save'}
                 </button>
                 <button type="button" className={styles.cancelBtn} onClick={cancelEdit}>
                   Cancel
@@ -180,6 +201,8 @@ export default function DashboardPage() {
           <h2 className={styles.cardTitle}>My campaigns</h2>
           {campaignsLoading ? (
             <p className={styles.placeholder}>Loading…</p>
+          ) : campaignsError ? (
+            <p className={styles.cardError}>Could not load campaigns. Try refreshing.</p>
           ) : campaigns.length === 0 ? (
             <p className={styles.placeholder}>
               You haven&apos;t created any campaigns yet.{' '}
@@ -207,6 +230,8 @@ export default function DashboardPage() {
           <h2 className={styles.cardTitle}>My events</h2>
           {eventsLoading ? (
             <p className={styles.placeholder}>Loading…</p>
+          ) : eventsError ? (
+            <p className={styles.cardError}>Could not load events. Try refreshing.</p>
           ) : events.length === 0 ? (
             <p className={styles.placeholder}>
               You haven&apos;t organized any events yet.{' '}
@@ -232,6 +257,8 @@ export default function DashboardPage() {
           <h2 className={styles.cardTitle}>My RSVPs</h2>
           {rsvpsLoading ? (
             <p className={styles.placeholder}>Loading…</p>
+          ) : rsvpsError ? (
+            <p className={styles.cardError}>Could not load RSVPs. Try refreshing.</p>
           ) : rsvps.length === 0 ? (
             <p className={styles.placeholder}>
               No upcoming RSVPs. <Link to="/events">Browse volunteer events</Link>.
@@ -259,6 +286,8 @@ export default function DashboardPage() {
           <h2 className={styles.cardTitle}>Giving history</h2>
           {donationsLoading ? (
             <p className={styles.placeholder}>Loading…</p>
+          ) : donationsError ? (
+            <p className={styles.cardError}>Could not load giving history. Try refreshing.</p>
           ) : donations.length === 0 ? (
             <p className={styles.placeholder}>
               Your donations will appear here after you contribute to a campaign.
