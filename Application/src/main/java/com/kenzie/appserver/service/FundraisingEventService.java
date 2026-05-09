@@ -166,6 +166,9 @@ public class FundraisingEventService {
         requireOrganizer(record, requestingUserId);
         requireModifiable(record);
 
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event name is required");
+        }
         if (request.getEventDate() != null && request.getRegistrationDeadline() != null
                 && request.getRegistrationDeadline().isAfter(request.getEventDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

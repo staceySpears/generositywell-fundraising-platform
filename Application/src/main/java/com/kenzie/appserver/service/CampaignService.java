@@ -128,6 +128,12 @@ public class CampaignService {
         if (CampaignStatus.CLOSED.name().equals(record.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot update a closed campaign");
         }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign name is required");
+        }
+        if (request.getGoalAmount() == null || request.getGoalAmount() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Goal amount must be a positive value");
+        }
 
         Long oldGoalAmount = record.getGoalAmount();
         record.setName(request.getName());
