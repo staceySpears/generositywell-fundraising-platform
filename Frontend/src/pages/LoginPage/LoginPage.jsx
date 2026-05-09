@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       await login(values);
       navigate(from, { replace: true });
-    } catch (err) {
+    } catch {
       setServerError('Invalid email or password. Please try again.');
     }
   };
