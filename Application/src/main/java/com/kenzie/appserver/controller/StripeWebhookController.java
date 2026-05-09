@@ -73,7 +73,7 @@ public class StripeWebhookController {
                 if (campaignId != null) {
                     try {
                         campaignService.addDonation(campaignId, amount, donorId);
-                        log.info("Donation recorded: campaign={} amount={} donor={}", campaignId, amount, donorId);
+                        log.info("Donation recorded: campaign={} amount={} authenticated={}", campaignId, amount, donorId != null);
                     } catch (Exception e) {
                         // Log but return 200 — Stripe retries on non-2xx, and the payment already succeeded
                         log.error("Failed to record donation for campaign {}: {}", campaignId, e.getMessage());
