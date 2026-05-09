@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kenzie.appserver.service.model.Supporter;
 import com.kenzie.appserver.service.model.User;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /** API response representing a campaign's current state. Monetary fields are in cents. */
@@ -18,10 +19,10 @@ public class CampaignResponse {
     private String name;
 
     @JsonProperty("date")
-    private String date;
+    private LocalDate date;
 
     @JsonProperty("deadline")
-    private String deadline;
+    private LocalDate deadline;
 
     @JsonProperty("category")
     private String category;
@@ -60,15 +61,15 @@ public class CampaignResponse {
     /** @param name the campaign display name */
     public void setName(String name) { this.name = name; }
 
-    /** @return the campaign start date (ISO-8601) */
-    public String getDate() { return date; }
+    /** @return the campaign start date */
+    public LocalDate getDate() { return date; }
     /** @param date the start date */
-    public void setDate(String date) { this.date = date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
-    /** @return the fundraising deadline (ISO-8601) */
-    public String getDeadline() { return deadline; }
+    /** @return the fundraising deadline */
+    public LocalDate getDeadline() { return deadline; }
     /** @param deadline the fundraising deadline */
-    public void setDeadline(String deadline) { this.deadline = deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
 
     /** @return the campaign category */
     public String getCategory() { return category; }

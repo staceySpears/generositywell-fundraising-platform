@@ -126,8 +126,8 @@ class CampaignControllerTest {
         CampaignUpdateRequest update = new CampaignUpdateRequest();
         update.setId(created.getId());
         update.setName("Updated: " + mockNeat.strings().get());
-        update.setDate(LocalDate.now().toString());
-        update.setDeadline(LocalDate.now().plusDays(60).toString());
+        update.setDate(LocalDate.now());
+        update.setDeadline(LocalDate.now().plusDays(60));
         update.setCategory("Education");
         update.setUser(created.getUser());
         update.setSupporters(new ArrayList<>());
@@ -149,8 +149,8 @@ class CampaignControllerTest {
         CampaignUpdateRequest update = new CampaignUpdateRequest();
         update.setId(created.getId());
         update.setName("Hijacked");
-        update.setDate(LocalDate.now().toString());
-        update.setDeadline(LocalDate.now().plusDays(60).toString());
+        update.setDate(LocalDate.now());
+        update.setDeadline(LocalDate.now().plusDays(60));
         update.setCategory("Education");
         update.setUser(created.getUser());
         update.setSupporters(new ArrayList<>());
@@ -247,8 +247,8 @@ class CampaignControllerTest {
 
         CreateCampaignRequest request = new CreateCampaignRequest();
         request.setName(mockNeat.names().first().get() + " Campaign");
-        request.setDate(LocalDate.now().toString());
-        request.setDeadline(LocalDate.now().plusDays(30).toString());
+        request.setDate(LocalDate.now());
+        request.setDeadline(LocalDate.now().plusDays(30));
         request.setCategory("Community");
         request.setUser(user);
         request.setSupporters(new ArrayList<>());

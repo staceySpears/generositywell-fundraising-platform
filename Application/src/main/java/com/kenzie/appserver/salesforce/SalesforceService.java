@@ -53,8 +53,8 @@ public class SalesforceService {
             Map<String, Object> fields = new HashMap<>();
             fields.put("Name", record.getName());
             fields.put("Description", record.getDescription());
-            fields.put("StartDate", record.getDate());
-            fields.put("EndDate", record.getDeadline());
+            fields.put("StartDate", record.getDate() != null ? record.getDate().toString() : null);
+            fields.put("EndDate", record.getDeadline() != null ? record.getDeadline().toString() : null);
             fields.put("Type", "Fundraising");
             fields.put("Status", toSalesforceCampaignStatus(record.getStatus()));
             fields.put("ExpectedRevenue", record.getGoalAmount() / 100.0);

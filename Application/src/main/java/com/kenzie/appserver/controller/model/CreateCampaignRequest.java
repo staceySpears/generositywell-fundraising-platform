@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /** Request body for creating a new fundraising campaign. Monetary amounts are in cents. */
@@ -19,13 +20,13 @@ public class CreateCampaignRequest {
     @JsonProperty("name")
     private String name;
 
-    @NotBlank
+    @NotNull
     @JsonProperty("date")
-    private String date;
+    private LocalDate date;
 
-    @NotBlank
+    @NotNull
     @JsonProperty("deadline")
-    private String deadline;
+    private LocalDate deadline;
 
     @NotBlank
     @JsonProperty("category")
@@ -63,15 +64,15 @@ public class CreateCampaignRequest {
     /** @param name the campaign display name */
     public void setName(String name) { this.name = name; }
 
-    /** @return the campaign start date (ISO-8601) */
-    public String getDate() { return date; }
+    /** @return the campaign start date */
+    public LocalDate getDate() { return date; }
     /** @param date the start date */
-    public void setDate(String date) { this.date = date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
-    /** @return the fundraising deadline (ISO-8601) */
-    public String getDeadline() { return deadline; }
+    /** @return the fundraising deadline */
+    public LocalDate getDeadline() { return deadline; }
     /** @param deadline the fundraising deadline */
-    public void setDeadline(String deadline) { this.deadline = deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
 
     /** @return the campaign category */
     public String getCategory() { return category; }
