@@ -33,6 +33,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CampaignServiceTest {
 
+    private static final String USER_ID = "user-1";
+
     @Mock
     private CampaignDao campaignDao;
 
@@ -41,6 +43,9 @@ class CampaignServiceTest {
 
     @Mock
     private SalesforceService salesforceService;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private CampaignService campaignService;
@@ -463,7 +468,7 @@ class CampaignServiceTest {
     void deleteCampaign_nullId_throwsBadRequest() {
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.deleteCampaign(null)
+                () -> campaignService.deleteCampaign(null, USER_ID)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -472,7 +477,7 @@ class CampaignServiceTest {
     void deleteCampaign_blankId_throwsBadRequest() {
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.deleteCampaign("   ")
+                () -> campaignService.deleteCampaign("   ", USER_ID)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -481,7 +486,7 @@ class CampaignServiceTest {
     void deleteCampaign_emptyId_throwsBadRequest() {
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.deleteCampaign("")
+                () -> campaignService.deleteCampaign("", USER_ID)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -493,7 +498,7 @@ class CampaignServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> campaignService.deleteCampaign(id)
+                () -> campaignService.deleteCampaign(id, USER_ID)
         );
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
@@ -503,7 +508,7 @@ class CampaignServiceTest {
         String id = UUID.randomUUID().toString();
         when(campaignDao.existsById(id)).thenReturn(true);
 
-        campaignService.deleteCampaign(id);
+        campaignService.deleteCampaign(id, USER_ID);
 
         verify(campaignDao).deleteById(id);
         verify(cache).evict(id);

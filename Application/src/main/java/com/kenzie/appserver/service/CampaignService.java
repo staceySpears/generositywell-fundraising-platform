@@ -7,6 +7,8 @@ import com.kenzie.appserver.controller.model.CreateCampaignRequest;
 import com.kenzie.appserver.repositories.CampaignDao;
 import com.kenzie.appserver.repositories.model.CampaignRecord;
 import com.kenzie.appserver.salesforce.SalesforceService;
+import com.kenzie.appserver.service.model.AuditAction;
+import com.kenzie.appserver.service.model.AuditEntityType;
 import com.kenzie.appserver.service.model.CampaignStatus;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,13 +28,16 @@ public class CampaignService {
     private final CampaignDao campaignDao;
     private final CacheStore<CampaignRecord> cache;
     private final SalesforceService salesforceService;
+    private final AuditLogService auditLogService;
 
     public CampaignService(CampaignDao campaignDao,
                            @Qualifier("campaignCache") CacheStore<CampaignRecord> cache,
-                           SalesforceService salesforceService) {
+                           SalesforceService salesforceService,
+                           AuditLogService auditLogService) {
         this.campaignDao = campaignDao;
         this.cache = cache;
         this.salesforceService = salesforceService;
+        this.auditLogService = auditLogService;
     }
 
     /**
@@ -94,6 +100,10 @@ public class CampaignService {
         campaignDao.save(record);
         salesforceService.syncCampaign(record);
 
+        auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
+                AuditAction.CAMPAIGN_CREATED, record.getUser().getId(),
+                Map.of("name", record.getName(), "goalAmount", record.getGoalAmount()));
+
         return recordToResponse(record);
     }
 
@@ -118,6 +128,7 @@ public class CampaignService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot update a closed campaign");
         }
 
+        Long oldGoalAmount = record.getGoalAmount();
         record.setName(request.getName());
         record.setDate(request.getDate());
         record.setDeadline(request.getDeadline());
@@ -126,9 +137,20 @@ public class CampaignService {
         record.setSupporters(request.getSupporters());
         record.setAddress(request.getAddress());
         record.setDescription(request.getDescription());
+        boolean goalChanged = !Objects.equals(oldGoalAmount, request.getGoalAmount());
         record.setGoalAmount(request.getGoalAmount());
         campaignDao.save(record);
         cache.evict(record.getId());
+
+        if (goalChanged) {
+            auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
+                    AuditAction.GOAL_UPDATED, requestingUserId,
+                    Map.of("oldGoal", oldGoalAmount, "newGoal", request.getGoalAmount()));
+        } else {
+            auditLogService.logAsync(AuditEntityType.CAMPAIGN, record.getId(),
+                    AuditAction.CAMPAIGN_UPDATED, requestingUserId,
+                    Map.of("name", record.getName()));
+        }
 
         return recordToResponse(record);
     }
@@ -171,6 +193,15 @@ public class CampaignService {
         cache.evict(campaignId);
         salesforceService.syncDonation(record, amountInCents);
 
+        // Synchronous: the donation must be in the audit log before the response is sent.
+        // actorId is unknown here (Stripe webhook path has no authenticated user);
+        // use the campaign owner as the contextual actor for the ledger record.
+        String actorId = record.getUser() != null ? record.getUser().getId() : "system";
+        auditLogService.logSync(AuditEntityType.DONATION, campaignId,
+                AuditAction.PAYMENT_SUCCEEDED, actorId,
+                Map.of("amountInCents", amountInCents, "newTotalCents", newTotal,
+                        "status", record.getStatus()));
+
         return recordToResponse(record);
     }
 
@@ -199,17 +230,22 @@ public class CampaignService {
         campaignDao.save(record);
         cache.evict(campaignId);
 
+        auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
+                AuditAction.CAMPAIGN_CLOSED, requestingUserId,
+                Map.of("finalStatus", CampaignStatus.CLOSED.name()));
+
         return recordToResponse(record);
     }
 
     /**
      * Permanently deletes a campaign and evicts it from the cache.
      *
-     * @param campaignId the campaign to delete
+     * @param campaignId       the campaign to delete
+     * @param requestingUserId the user ID from the authenticated JWT
      * @throws org.springframework.web.server.ResponseStatusException 400 if ID is blank,
      *         404 if not found
      */
-    public void deleteCampaign(String campaignId) {
+    public void deleteCampaign(String campaignId, String requestingUserId) {
         if (campaignId == null || campaignId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
         }
@@ -218,6 +254,10 @@ public class CampaignService {
         }
         campaignDao.deleteById(campaignId);
         cache.evict(campaignId);
+
+        auditLogService.logAsync(AuditEntityType.CAMPAIGN, campaignId,
+                AuditAction.CAMPAIGN_DELETED, requestingUserId,
+                Map.of("campaignId", campaignId));
     }
 
     /**

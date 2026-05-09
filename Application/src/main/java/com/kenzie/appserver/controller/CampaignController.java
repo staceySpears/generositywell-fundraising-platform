@@ -131,8 +131,10 @@ public class CampaignController {
      * @return 204 on success, 400 if ID is blank, 404 if not found
      */
     @DeleteMapping("/{campaignId}")
-    public ResponseEntity<Void> deleteCampaignById(@PathVariable("campaignId") String campaignId) {
-        campaignService.deleteCampaign(campaignId);
+    public ResponseEntity<Void> deleteCampaignById(
+            @PathVariable("campaignId") String campaignId,
+            Authentication authentication) {
+        campaignService.deleteCampaign(campaignId, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 

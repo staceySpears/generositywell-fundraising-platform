@@ -7,6 +7,8 @@ import com.kenzie.appserver.controller.model.EventUpdateRequest;
 import com.kenzie.appserver.controller.model.RsvpRequest;
 import com.kenzie.appserver.repositories.FundraisingEventDao;
 import com.kenzie.appserver.repositories.model.FundraisingEventRecord;
+import com.kenzie.appserver.service.model.AuditAction;
+import com.kenzie.appserver.service.model.AuditEntityType;
 import com.kenzie.appserver.service.model.EventStatus;
 import com.kenzie.appserver.service.model.RsvpStatus;
 import com.kenzie.appserver.service.model.Volunteer;
@@ -18,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,11 +39,14 @@ public class FundraisingEventService {
 
     private final FundraisingEventDao eventDao;
     private final CacheStore<FundraisingEventRecord> cache;
+    private final AuditLogService auditLogService;
 
     public FundraisingEventService(FundraisingEventDao eventDao,
-                                   @Qualifier("eventCache") CacheStore<FundraisingEventRecord> cache) {
+                                   @Qualifier("eventCache") CacheStore<FundraisingEventRecord> cache,
+                                   AuditLogService auditLogService) {
         this.eventDao = eventDao;
         this.cache = cache;
+        this.auditLogService = auditLogService;
     }
 
     // ── Reads ──────────────────────────────────────────────────────────────────
@@ -136,6 +142,10 @@ public class FundraisingEventService {
         record.setStatus(EventStatus.PLANNING.name());
         eventDao.save(record);
 
+        auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
+                AuditAction.EVENT_CREATED, request.getOrganizer().getId(),
+                Map.of("name", record.getName(), "campaignId", record.getCampaignId()));
+
         return recordToResponse(record);
     }
 
@@ -170,6 +180,10 @@ public class FundraisingEventService {
         eventDao.save(record);
         cache.evict(CACHE_PREFIX + record.getId());
 
+        auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, record.getId(),
+                AuditAction.EVENT_UPDATED, requestingUserId,
+                Map.of("name", record.getName()));
+
         return recordToResponse(record);
     }
 
@@ -196,6 +210,10 @@ public class FundraisingEventService {
         eventDao.save(record);
         cache.evict(CACHE_PREFIX + eventId);
 
+        auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
+                AuditAction.EVENT_PUBLISHED, requestingUserId,
+                Map.of("status", EventStatus.SCHEDULED.name()));
+
         return recordToResponse(record);
     }
 
@@ -217,6 +235,10 @@ public class FundraisingEventService {
         record.setStatus(EventStatus.CANCELLED.name());
         eventDao.save(record);
         cache.evict(CACHE_PREFIX + eventId);
+
+        auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
+                AuditAction.EVENT_CANCELLED, requestingUserId,
+                Map.of("status", EventStatus.CANCELLED.name()));
 
         return recordToResponse(record);
     }
@@ -244,6 +266,10 @@ public class FundraisingEventService {
 
         eventDao.deleteById(eventId);
         cache.evict(CACHE_PREFIX + eventId);
+
+        auditLogService.logAsync(AuditEntityType.FUNDRAISING_EVENT, eventId,
+                AuditAction.EVENT_DELETED, requestingUserId,
+                Map.of("eventId", eventId));
     }
 
     // ── RSVP ──────────────────────────────────────────────────────────────────
@@ -305,6 +331,13 @@ public class FundraisingEventService {
         eventDao.save(record);
         cache.evict(CACHE_PREFIX + eventId);
 
+        AuditAction rsvpAction = RsvpStatus.CONFIRMED.name().equals(status)
+                ? AuditAction.RSVP_CONFIRMED
+                : AuditAction.RSVP_WAITLISTED;
+        auditLogService.logAsync(AuditEntityType.RSVP, eventId,
+                rsvpAction, request.getVolunteerId(),
+                Map.of("volunteerId", request.getVolunteerId(), "rsvpStatus", status));
+
         return recordToResponse(record);
     }
 
@@ -341,16 +374,26 @@ public class FundraisingEventService {
         target.setRsvpStatus(RsvpStatus.CANCELLED.name());
 
         // Promote first waitlisted volunteer when a confirmed spot opens
+        Optional<Volunteer> promoted = Optional.empty();
         if (wasConfirmed) {
-            volunteers.stream()
+            promoted = volunteers.stream()
                     .filter(v -> RsvpStatus.WAITLISTED.name().equals(v.getRsvpStatus()))
-                    .findFirst()
-                    .ifPresent(v -> v.setRsvpStatus(RsvpStatus.CONFIRMED.name()));
+                    .findFirst();
+            promoted.ifPresent(v -> v.setRsvpStatus(RsvpStatus.CONFIRMED.name()));
         }
 
         record.setVolunteers(volunteers);
         eventDao.save(record);
         cache.evict(CACHE_PREFIX + eventId);
+
+        auditLogService.logAsync(AuditEntityType.RSVP, eventId,
+                AuditAction.RSVP_CANCELLED, volunteerId,
+                Map.of("volunteerId", volunteerId));
+
+        promoted.ifPresent(v ->
+                auditLogService.logAsync(AuditEntityType.RSVP, eventId,
+                        AuditAction.RSVP_PROMOTED_FROM_WAITLIST, v.getId(),
+                        Map.of("volunteerId", v.getId())));
 
         return recordToResponse(record);
     }
