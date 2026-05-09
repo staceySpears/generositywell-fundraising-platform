@@ -1,10 +1,110 @@
 .heading {
   font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
-.placeholder {
+.state {
   color: var(--color-text-muted);
+}
+.stateError {
+  color: var(--color-error);
+}
+.month {
+  margin-bottom: 2rem;
+}
+.monthHeading {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0;
+}
+.item {
+  display: flex;
+  gap: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1.125rem;
+}
+.dateBadge {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  min-width: 9rem;
+  padding-top: 0.0625rem;
+}
+.itemBody {
+  flex: 1;
+  min-width: 0;
+}
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.eventName {
+  font-weight: 600;
   font-size: 0.9375rem;
-  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dot {
+  flex-shrink: 0;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background-color: var(--color-border);
+}
+.dotPlanning {
+  background-color: #94a3b8;
+}
+.dotScheduled {
+  background-color: #10b981;
+}
+.dotInProgress {
+  background-color: #3b82f6;
+}
+.dotCompleted {
+  background-color: #8b5cf6;
+}
+.dotCancelled {
+  background-color: #ef4444;
+}
+.location {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 0.375rem;
+}
+.itemFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rsvpCount {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.rsvpLink {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.rsvpLink:hover {
+  text-decoration: underline;
 }
