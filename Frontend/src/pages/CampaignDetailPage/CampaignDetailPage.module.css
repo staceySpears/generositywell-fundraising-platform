@@ -6,11 +6,19 @@
 }
 
 @media (max-width: 720px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }
 
-.state      { color: var(--color-text-muted); margin-top: 2rem; }
-.stateError { color: var(--color-error); margin-top: 2rem; }
+.state {
+  color: var(--color-text-muted);
+  margin-top: 2rem;
+}
+.stateError {
+  color: var(--color-error);
+  margin-top: 2rem;
+}
 
 /* ── Main content ─────────────────────────────────────────── */
 .meta {
@@ -39,8 +47,14 @@
   color: var(--color-text-muted);
 }
 
-.status.active { background-color: rgba(74, 222, 128, 0.15); color: var(--color-success); }
-.status.funded { background-color: rgba(168, 85, 247, 0.15); color: var(--color-primary); }
+.status.active {
+  background-color: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+.status.funded {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: var(--color-primary);
+}
 
 .title {
   font-size: 2rem;
@@ -129,8 +143,15 @@
   font-weight: 600;
 }
 
-.field { display: flex; flex-direction: column; gap: 0.375rem; }
-.label { font-size: 0.875rem; font-weight: 500; }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
 
 .inputWrapper {
   display: flex;
@@ -142,7 +163,9 @@
   transition: border-color 0.15s;
 }
 
-.inputWrapper:focus-within { border-color: var(--color-primary); }
+.inputWrapper:focus-within {
+  border-color: var(--color-primary);
+}
 
 .currency {
   padding: 0.625rem 0.625rem 0.625rem 0.75rem;
@@ -163,11 +186,22 @@
 }
 
 .inputError + .input,
-.inputWrapper:has(.inputError) { border-color: var(--color-error); }
+.inputWrapper:has(.inputError) {
+  border-color: var(--color-error);
+}
 
-.error        { font-size: 0.75rem; color: var(--color-error); }
-.serverError  { font-size: 0.8125rem; color: var(--color-error); }
-.serverSuccess { font-size: 0.8125rem; color: var(--color-success); }
+.error {
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+.serverError {
+  font-size: 0.8125rem;
+  color: var(--color-error);
+}
+.serverSuccess {
+  font-size: 0.8125rem;
+  color: var(--color-success);
+}
 
 .donateBtn {
   background-color: var(--color-primary);
@@ -180,8 +214,13 @@
   transition: background-color 0.15s;
 }
 
-.donateBtn:hover:not(:disabled) { background-color: var(--color-primary-hover); }
-.donateBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.donateBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+.donateBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .closedNotice {
   font-size: 0.875rem;

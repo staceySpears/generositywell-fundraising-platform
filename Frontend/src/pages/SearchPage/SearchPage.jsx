@@ -7,7 +7,11 @@ import styles from './SearchPage.module.css';
 export default function SearchPage() {
   const [query, setQuery] = useState('');
 
-  const { data: campaigns = [], isLoading, isError } = useQuery({
+  const {
+    data: campaigns = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['campaigns'],
     queryFn: getAllCampaigns,
   });
@@ -34,7 +38,7 @@ export default function SearchPage() {
       />
 
       {isLoading && <p className={styles.state}>Loading…</p>}
-      {isError   && <p className={styles.stateError}>Failed to load campaigns.</p>}
+      {isError && <p className={styles.stateError}>Failed to load campaigns.</p>}
 
       {!isLoading && !isError && (
         <p className={styles.resultCount}>

@@ -4,14 +4,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { loginSchema as schema } from '../../schemas/auth.js';
 import * as Label from '@radix-ui/react-label';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const from      = location.state?.from?.pathname ?? '/dashboard';
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname ?? '/dashboard';
 
   const [serverError, setServerError] = useState('');
 
@@ -27,9 +27,7 @@ export default function LoginPage() {
       await login(values);
       navigate(from, { replace: true });
     } catch (err) {
-      setServerError(
-        err.response?.data?.message ?? 'Invalid email or password. Please try again.'
-      );
+      setServerError(err.response?.data?.message ?? 'Invalid email or password. Please try again.');
     }
   };
 
@@ -41,7 +39,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
           <div className={styles.field}>
-            <Label.Root htmlFor="email" className={styles.label}>Email</Label.Root>
+            <Label.Root htmlFor="email" className={styles.label}>
+              Email
+            </Label.Root>
             <input
               id="email"
               type="email"
@@ -53,7 +53,9 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.field}>
-            <Label.Root htmlFor="password" className={styles.label}>Password</Label.Root>
+            <Label.Root htmlFor="password" className={styles.label}>
+              Password
+            </Label.Root>
             <input
               id="password"
               type="password"

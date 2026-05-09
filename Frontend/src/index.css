@@ -1,31 +1,35 @@
 /* Global design tokens — consumed by CSS Modules via var() */
 :root {
-  --color-bg:          #150019;
-  --color-surface:     #220028;
+  --color-bg: #150019;
+  --color-surface: #220028;
   --color-surface-alt: #2e0038;
-  --color-border:      rgba(255, 255, 255, 0.12);
-  --color-primary:     #a855f7;
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-primary: #a855f7;
   --color-primary-hover: #9333ea;
   --color-primary-dark: #7e22ce;
-  --color-text:        #fdfbfa;
-  --color-text-muted:  rgba(253, 251, 250, 0.6);
-  --color-error:       #f87171;
-  --color-success:     #4ade80;
+  --color-text: #fdfbfa;
+  --color-text-muted: rgba(253, 251, 250, 0.6);
+  --color-error: #f87171;
+  --color-success: #4ade80;
 
-  --radius-sm:  4px;
-  --radius-md:  8px;
-  --radius-lg:  12px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
   --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -50,6 +54,8 @@ button {
   font-family: inherit;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
 }

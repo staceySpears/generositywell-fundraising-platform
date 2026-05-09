@@ -11,10 +11,11 @@ export default function ForgotPasswordPage() {
       <div className={styles.card}>
         <h1 className={styles.title}>Reset your password</h1>
         <p className={styles.subtitle}>
-          Password reset is coming soon. For now, contact your organizer
-          or create a new account.
+          Password reset is coming soon. For now, contact your organizer or create a new account.
         </p>
-        <Link to="/login" className={styles.backLink}>← Back to login</Link>
+        <Link to="/login" className={styles.backLink}>
+          ← Back to login
+        </Link>
       </div>
     </div>
   );

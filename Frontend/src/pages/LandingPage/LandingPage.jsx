@@ -7,14 +7,18 @@ export default function LandingPage() {
       <div className={styles.heroContent}>
         <h1 className={styles.title}>Fundraising rooted in community.</h1>
         <p className={styles.subtitle}>
-          GenerosityWell is a hyperlocal platform for neighborhood groups, schools, and
-          grassroots nonprofits. Track volunteer hours alongside donations, and close the
-          loop with structured impact reporting — so every contributor sees exactly how
-          their time or money drove real-world change.
+          GenerosityWell is a hyperlocal platform for neighborhood groups, schools, and grassroots
+          nonprofits. Track volunteer hours alongside donations, and close the loop with structured
+          impact reporting — so every contributor sees exactly how their time or money drove
+          real-world change.
         </p>
         <div className={styles.actions}>
-          <Link to="/campaigns" className={styles.primaryBtn}>Browse campaigns</Link>
-          <Link to="/register"  className={styles.secondaryBtn}>Start a campaign</Link>
+          <Link to="/campaigns" className={styles.primaryBtn}>
+            Browse campaigns
+          </Link>
+          <Link to="/register" className={styles.secondaryBtn}>
+            Start a campaign
+          </Link>
         </div>
       </div>
 
@@ -27,12 +31,18 @@ export default function LandingPage() {
         <div className={styles.featureCard}>
           <span className={styles.featureIcon}>🤝</span>
           <h3>Volunteer coordination</h3>
-          <p>Sweat equity counts too. Attendees RSVP for events and log volunteer hours alongside cash contributions.</p>
+          <p>
+            Sweat equity counts too. Attendees RSVP for events and log volunteer hours alongside
+            cash contributions.
+          </p>
         </div>
         <div className={styles.featureCard}>
           <span className={styles.featureIcon}>📊</span>
           <h3>Impact reporting</h3>
-          <p>Organizers post structured updates. Donors see exactly what their contribution accomplished.</p>
+          <p>
+            Organizers post structured updates. Donors see exactly what their contribution
+            accomplished.
+          </p>
         </div>
       </section>
     </div>

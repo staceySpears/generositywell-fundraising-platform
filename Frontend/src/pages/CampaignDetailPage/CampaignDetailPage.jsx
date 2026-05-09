@@ -11,14 +11,19 @@ import styles from './CampaignDetailPage.module.css';
 const formatDate = (iso) => {
   if (!iso) return '';
   // Append T00:00 so Date parses as local time, not UTC midnight (which shifts by timezone).
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    .format(new Date(`${iso}T00:00`));
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(`${iso}T00:00`));
 };
 
 const formatDollars = (cents) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-    (cents ?? 0) / 100
-  );
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format((cents ?? 0) / 100);
 
 const progressPercent = (current, goal) =>
   goal > 0 ? Math.min(100, Math.round(((current ?? 0) / goal) * 100)) : 0;
@@ -27,7 +32,11 @@ export default function CampaignDetailPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  const { data: campaign, isLoading, isError } = useQuery({
+  const {
+    data: campaign,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['campaigns', id],
     queryFn: () => getCampaignById(id),
   });
@@ -50,7 +59,7 @@ export default function CampaignDetailPage() {
   });
 
   if (isLoading) return <p className={styles.state}>Loading…</p>;
-  if (isError)   return <p className={styles.stateError}>Campaign not found.</p>;
+  if (isError) return <p className={styles.stateError}>Campaign not found.</p>;
 
   const pct = progressPercent(campaign.currentAmount, campaign.goalAmount);
   const isClosed = campaign.status === 'CLOSED';
@@ -96,7 +105,9 @@ export default function CampaignDetailPage() {
           >
             <h2 className={styles.donateTitle}>Make a donation</h2>
             <div className={styles.field}>
-              <Label.Root htmlFor="dollars" className={styles.label}>Amount (USD)</Label.Root>
+              <Label.Root htmlFor="dollars" className={styles.label}>
+                Amount (USD)
+              </Label.Root>
               <div className={styles.inputWrapper}>
                 <span className={styles.currency}>$</span>
                 <input
@@ -124,18 +135,16 @@ export default function CampaignDetailPage() {
               <p className={styles.serverSuccess}>Thank you for your donation!</p>
             )}
 
-            <button
-              type="submit"
-              className={styles.donateBtn}
-              disabled={mutation.isPending}
-            >
+            <button type="submit" className={styles.donateBtn} disabled={mutation.isPending}>
               {mutation.isPending ? 'Processing…' : 'Donate'}
             </button>
           </form>
         )}
 
         {isClosed && (
-          <p className={styles.closedNotice}>This campaign has closed. Thank you to all who contributed!</p>
+          <p className={styles.closedNotice}>
+            This campaign has closed. Thank you to all who contributed!
+          </p>
         )}
       </aside>
     </div>

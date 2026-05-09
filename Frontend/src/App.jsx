@@ -19,19 +19,19 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         {/* Public routes */}
-        <Route path="/"               element={<LandingPage />} />
-        <Route path="/login"          element={<LoginPage />} />
-        <Route path="/register"       element={<RegisterPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/search"         element={<SearchPage />} />
-        <Route path="/campaigns"      element={<CampaignsPage />} />
-        <Route path="/campaigns/:id"  element={<CampaignDetailPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/campaigns" element={<CampaignsPage />} />
+        <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
 
         {/* Authenticated routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/events"    element={<EventsPage />} />
-          <Route path="/calendar"  element={<CalendarPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
         </Route>
 
         {/* Catch-all — renders inside Layout so the nav is still visible */}
