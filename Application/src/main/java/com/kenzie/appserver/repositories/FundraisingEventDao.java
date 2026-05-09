@@ -92,4 +92,18 @@ public class FundraisingEventDao {
                 .filter(r -> campaignId.equals(r.getCampaignId()))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Returns all events organized by the given user.
+     * Uses a client-side filter over a full table scan.
+     * Add an {@code organizerId} GSI at scale to replace this with an index query.
+     *
+     * @param organizerId the organizer's user ID
+     * @return list of events created by that user
+     */
+    public List<FundraisingEventRecord> findByOrganizerId(String organizerId) {
+        return findAll().stream()
+                .filter(r -> r.getOrganizer() != null && organizerId.equals(r.getOrganizer().getId()))
+                .collect(Collectors.toList());
+    }
 }

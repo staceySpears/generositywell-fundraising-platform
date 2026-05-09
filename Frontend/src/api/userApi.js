@@ -37,3 +37,25 @@ export const updateUser = async (payload) => {
   const { data } = await client.put(`/users/${payload.id}`, payload);
   return data;
 };
+
+/**
+ * GET /users/:id/campaigns
+ * Returns all campaigns created by the user.
+ * @param {string} id
+ * @returns {Promise<Array>}
+ */
+export const getUserCampaigns = async (id) => {
+  const { data } = await client.get(`/users/${id}/campaigns`);
+  return data;
+};
+
+/**
+ * GET /users/:id/events
+ * Returns all events organized by the user.
+ * @param {string} id
+ * @returns {Promise<Array>}
+ */
+export const getUserEvents = async (id) => {
+  const { data } = await client.get(`/users/${id}/events`);
+  return data;
+};

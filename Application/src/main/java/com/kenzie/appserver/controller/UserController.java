@@ -1,10 +1,14 @@
 package com.kenzie.appserver.controller;
 
 import com.kenzie.appserver.controller.model.*;
+import com.kenzie.appserver.service.CampaignService;
+import com.kenzie.appserver.service.FundraisingEventService;
 import com.kenzie.appserver.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import java.net.URI;
 
@@ -14,9 +18,15 @@ import java.net.URI;
 public class UserController {
 
     private final UserService userService;
+    private final CampaignService campaignService;
+    private final FundraisingEventService eventService;
 
-    UserController(UserService userService) {
+    UserController(UserService userService,
+                   CampaignService campaignService,
+                   FundraisingEventService eventService) {
         this.userService = userService;
+        this.campaignService = campaignService;
+        this.eventService = eventService;
     }
 
     /**
@@ -76,6 +86,28 @@ public class UserController {
     public ResponseEntity deleteUserById(@PathVariable("id") String userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * {@code GET /users/{id}/campaigns} — returns all campaigns created by the user.
+     *
+     * @param id the user ID
+     * @return 200 with the list (may be empty)
+     */
+    @GetMapping("/{id}/campaigns")
+    public ResponseEntity<List<CampaignResponse>> getCampaignsByUser(@PathVariable("id") String id) {
+        return ResponseEntity.ok(campaignService.getCampaignsByUser(id));
+    }
+
+    /**
+     * {@code GET /users/{id}/events} — returns all events organized by the user.
+     *
+     * @param id the user ID
+     * @return 200 with the list (may be empty)
+     */
+    @GetMapping("/{id}/events")
+    public ResponseEntity<List<EventResponse>> getEventsByUser(@PathVariable("id") String id) {
+        return ResponseEntity.ok(eventService.getEventsByOrganizer(id));
     }
 
 }

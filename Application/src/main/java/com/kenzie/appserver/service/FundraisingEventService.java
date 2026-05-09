@@ -110,6 +110,22 @@ public class FundraisingEventService {
                 .toList();
     }
 
+    /**
+     * Returns all events organized by the given user.
+     *
+     * @param organizerId the organizer's user ID
+     * @return list of matching event responses
+     * @throws ResponseStatusException 400 if organizerId is blank
+     */
+    public List<EventResponse> getEventsByOrganizer(String organizerId) {
+        if (organizerId == null || organizerId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Organizer ID cannot be empty");
+        }
+        return eventDao.findByOrganizerId(organizerId).stream()
+                .map(this::recordToResponse)
+                .toList();
+    }
+
     // ── Writes ─────────────────────────────────────────────────────────────────
 
     /**
