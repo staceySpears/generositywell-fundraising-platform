@@ -9,6 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** DynamoDB persistence layer for {@link CampaignRecord}. */
 @Repository
@@ -71,6 +72,20 @@ public class CampaignDao {
      * @return list of all campaign records
      */
     public List<CampaignRecord> findAll() {
-        return campaignTable.scan().items().stream().toList();
+        return campaignTable.scan().items().stream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns all campaigns created by the given user.
+     * Uses a client-side filter over a full table scan.
+     * Add a {@code creatorId} GSI at scale to replace this with an index query.
+     *
+     * @param userId the creator's user ID
+     * @return list of campaigns owned by that user
+     */
+    public List<CampaignRecord> findByUserId(String userId) {
+        return findAll().stream()
+                .filter(r -> r.getUser() != null && userId.equals(r.getUser().getId()))
+                .collect(Collectors.toList());
     }
 }

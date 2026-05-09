@@ -299,6 +299,23 @@ public class CampaignService {
     }
 
     /**
+     * Returns all campaigns created by the given user, sorted by deadline descending
+     * (most recent first, nulls last).
+     *
+     * @param userId the creator's user ID
+     * @return list of campaign responses owned by that user
+     * @throws ResponseStatusException 400 if userId is blank
+     */
+    public List<CampaignResponse> getCampaignsByUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be empty");
+        }
+        return campaignDao.findByUserId(userId).stream()
+                .map(this::recordToResponse)
+                .toList();
+    }
+
+    /**
      * Maps a {@link CampaignRecord} to a {@link CampaignResponse}, computing
      * {@code percentFunded} when both goal and current amounts are available.
      *
