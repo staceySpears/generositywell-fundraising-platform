@@ -1,12 +1,14 @@
 package com.kenzie.appserver.controller.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 /** Request body for authenticating a user with email and password. */
 public class LoginRequest {
 
     @NotBlank
+    @Email
     @JsonProperty("email")
     private String email;
 

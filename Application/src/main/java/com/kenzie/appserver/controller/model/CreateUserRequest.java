@@ -3,6 +3,7 @@ package com.kenzie.appserver.controller.model;//package com.kenzie.appserver.con
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kenzie.appserver.service.model.User;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class CreateUserRequest {
     private String name;
 
     @NotBlank
+    @Email
     @JsonProperty("email")
     private String email;
 
