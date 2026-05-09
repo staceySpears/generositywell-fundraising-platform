@@ -65,13 +65,15 @@ public class StripeWebhookController {
             Optional<StripeObject> stripeObject = event.getDataObjectDeserializer().getObject();
             if (stripeObject.isPresent() && stripeObject.get() instanceof PaymentIntent intent) {
                 String campaignId = intent.getMetadata().get("campaignId");
+                // donorId is present when the payment was initiated by an authenticated user;
+                // null for anonymous payments (e.g. shared payment links with no login)
+                String donorId = intent.getMetadata().get("donorId");
                 long amount = intent.getAmount();
 
                 if (campaignId != null) {
                     try {
-                        // donorId is null for webhook path — no authenticated user context
-                        campaignService.addDonation(campaignId, amount, null);
-                        log.info("Donation recorded: campaign={} amount={}", campaignId, amount);
+                        campaignService.addDonation(campaignId, amount, donorId);
+                        log.info("Donation recorded: campaign={} amount={} authenticated={}", campaignId, amount, donorId != null);
                     } catch (Exception e) {
                         // Log but return 200 — Stripe retries on non-2xx, and the payment already succeeded
                         log.error("Failed to record donation for campaign {}: {}", campaignId, e.getMessage());

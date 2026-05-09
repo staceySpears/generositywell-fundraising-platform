@@ -83,18 +83,22 @@ public class CampaignController {
 
     /**
      * {@code POST /campaigns/{campaignId}/payment-intent} — creates a Stripe PaymentIntent.
-     * The campaign ID is embedded in the PaymentIntent metadata so the webhook can record
-     * the donation after payment succeeds. Requires a valid JWT.
+     * Both campaign ID and authenticated donor ID are embedded in the PaymentIntent metadata
+     * so the webhook can record the donation—and attribute it to the donor—after payment
+     * succeeds. Requires a valid JWT.
      *
-     * @param campaignId the target campaign
-     * @param request    the payment amount
+     * @param campaignId     the target campaign
+     * @param request        the payment amount
+     * @param authentication the authenticated principal (JWT subject used as donor ID)
      * @return 200 with the client secret for front-end confirmation
      */
     @PostMapping("/{campaignId}/payment-intent")
     public ResponseEntity<PaymentIntentResponse> createPaymentIntent(
             @PathVariable("campaignId") String campaignId,
-            @Valid @RequestBody PaymentIntentRequest request) {
-        PaymentIntentResponse response = stripeService.createPaymentIntent(campaignId, request.getAmount());
+            @Valid @RequestBody PaymentIntentRequest request,
+            Authentication authentication) {
+        String donorId = authentication != null ? authentication.getName() : null;
+        PaymentIntentResponse response = stripeService.createPaymentIntent(campaignId, request.getAmount(), donorId);
         return ResponseEntity.ok(response);
     }
 
