@@ -1,8 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as apiLogin, register as apiRegister } from '../api/userApi.js';
 
-const AuthContext = createContext(null);
+// Exported so useAuth (src/hooks/useAuth.js) can import it without creating
+// a circular dependency with AuthProvider.
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext(null);
 
 /**
  * Provides { token, userId, isAuthenticated, login, register, logout } to the tree.
@@ -18,15 +21,14 @@ const AuthContext = createContext(null);
  *  - 'gw:auth:expired': fired by the Axios 401 interceptor (same-tab expiry)
  */
 export function AuthProvider({ children }) {
-  const [token, setToken]   = useState(() => localStorage.getItem('gw_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('gw_token'));
   const [userId, setUserId] = useState(() => localStorage.getItem('gw_userId'));
   const navigate = useNavigate();
 
   // ── Cross-tab sync + interceptor-triggered logout ──────────────────────────
   useEffect(() => {
     const syncFromStorage = () => {
-      const storedToken = localStorage.getItem('gw_token');
-      setToken(storedToken);
+      setToken(localStorage.getItem('gw_token'));
       setUserId(localStorage.getItem('gw_userId'));
     };
 
@@ -50,7 +52,7 @@ export function AuthProvider({ children }) {
   // ── Auth actions ───────────────────────────────────────────────────────────
   const login = useCallback(async (credentials) => {
     const data = await apiLogin(credentials);
-    localStorage.setItem('gw_token',  data.token);
+    localStorage.setItem('gw_token', data.token);
     localStorage.setItem('gw_userId', data.userId);
     setToken(data.token);
     setUserId(data.userId);
@@ -75,11 +77,4 @@ export function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-/** @returns {{ token: string|null, userId: string|null, isAuthenticated: boolean, login: Function, register: Function, logout: Function }} */
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return ctx;
 }

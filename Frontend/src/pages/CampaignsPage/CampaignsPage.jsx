@@ -5,22 +5,34 @@ import styles from './CampaignsPage.module.css';
 
 /** Formats cents as a dollar string, e.g. 150000 → "$1,500" */
 const formatDollars = (cents) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-    (cents ?? 0) / 100
-  );
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format((cents ?? 0) / 100);
 
 const progressPercent = (current, goal) =>
   goal > 0 ? Math.min(100, Math.round(((current ?? 0) / goal) * 100)) : 0;
 
 export default function CampaignsPage() {
-  const { data: campaigns, isLoading, isError } = useQuery({
+  const {
+    data: campaigns,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['campaigns'],
     queryFn: getAllCampaigns,
   });
 
   if (isLoading) return <p className={styles.state}>Loading campaigns…</p>;
-  if (isError)   return <p className={styles.stateError}>Failed to load campaigns. Please try again.</p>;
-  if (!campaigns?.length) return <p className={styles.state}>No campaigns yet. <Link to="/register">Start one!</Link></p>;
+  if (isError)
+    return <p className={styles.stateError}>Failed to load campaigns. Please try again.</p>;
+  if (!campaigns?.length)
+    return (
+      <p className={styles.state}>
+        No campaigns yet. <Link to="/register">Start one!</Link>
+      </p>
+    );
 
   return (
     <div>
@@ -43,7 +55,9 @@ export default function CampaignsPage() {
               </div>
               <div className={styles.amounts}>
                 <span>{formatDollars(c.currentAmount)} raised</span>
-                <span>{pct}% of {formatDollars(c.goalAmount)}</span>
+                <span>
+                  {pct}% of {formatDollars(c.goalAmount)}
+                </span>
               </div>
             </Link>
           );

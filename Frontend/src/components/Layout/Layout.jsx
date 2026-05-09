@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import styles from './Layout.module.css';
 
 export default function Layout() {
@@ -14,17 +14,45 @@ export default function Layout() {
   return (
     <div className={styles.root}>
       <nav className={styles.nav}>
-        <Link to="/" className={styles.brand}>GenerosityWell</Link>
+        <Link to="/" className={styles.brand}>
+          GenerosityWell
+        </Link>
 
         <ul className={styles.navLinks}>
-          <li><NavLink to="/campaigns" className={({ isActive }) => isActive ? styles.active : ''}>Campaigns</NavLink></li>
-          <li><NavLink to="/search"    className={({ isActive }) => isActive ? styles.active : ''}>Search</NavLink></li>
+          <li>
+            <NavLink to="/campaigns" className={({ isActive }) => (isActive ? styles.active : '')}>
+              Campaigns
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/search" className={({ isActive }) => (isActive ? styles.active : '')}>
+              Search
+            </NavLink>
+          </li>
 
           {isAuthenticated ? (
             <>
-              <li><NavLink to="/dashboard" className={({ isActive }) => isActive ? styles.active : ''}>Dashboard</NavLink></li>
-              <li><NavLink to="/calendar"  className={({ isActive }) => isActive ? styles.active : ''}>Calendar</NavLink></li>
-              <li><NavLink to="/events"    className={({ isActive }) => isActive ? styles.active : ''}>Events</NavLink></li>
+              <li>
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) => (isActive ? styles.active : '')}
+                >
+                  Dashboard
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/calendar"
+                  className={({ isActive }) => (isActive ? styles.active : '')}
+                >
+                  Calendar
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/events" className={({ isActive }) => (isActive ? styles.active : '')}>
+                  Events
+                </NavLink>
+              </li>
               <li>
                 <button className={styles.logoutBtn} onClick={handleLogout}>
                   Log out
@@ -33,8 +61,21 @@ export default function Layout() {
             </>
           ) : (
             <>
-              <li><NavLink to="/login"    className={({ isActive }) => isActive ? styles.active : ''}>Log in</NavLink></li>
-              <li><NavLink to="/register" className={({ isActive }) => `${styles.registerBtn}${isActive ? ` ${styles.active}` : ''}`}>Join</NavLink></li>
+              <li>
+                <NavLink to="/login" className={({ isActive }) => (isActive ? styles.active : '')}>
+                  Log in
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/register"
+                  className={({ isActive }) =>
+                    `${styles.registerBtn}${isActive ? ` ${styles.active}` : ''}`
+                  }
+                >
+                  Join
+                </NavLink>
+              </li>
             </>
           )}
         </ul>

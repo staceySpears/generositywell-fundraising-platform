@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import * as Label from '@radix-ui/react-label';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import { registerSchema as schema } from '../../schemas/auth.js';
 import styles from './RegisterPage.module.css';
 
@@ -24,9 +24,7 @@ export default function RegisterPage() {
       await registerUser(values);
       navigate('/login', { state: { registered: true } });
     } catch (err) {
-      setServerError(
-        err.response?.data?.message ?? 'Registration failed. Please try again.'
-      );
+      setServerError(err.response?.data?.message ?? 'Registration failed. Please try again.');
     }
   };
 
@@ -38,7 +36,9 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
           <div className={styles.field}>
-            <Label.Root htmlFor="name" className={styles.label}>Full name</Label.Root>
+            <Label.Root htmlFor="name" className={styles.label}>
+              Full name
+            </Label.Root>
             <input
               id="name"
               type="text"
@@ -50,7 +50,9 @@ export default function RegisterPage() {
           </div>
 
           <div className={styles.field}>
-            <Label.Root htmlFor="email" className={styles.label}>Email</Label.Root>
+            <Label.Root htmlFor="email" className={styles.label}>
+              Email
+            </Label.Root>
             <input
               id="email"
               type="email"
@@ -62,7 +64,9 @@ export default function RegisterPage() {
           </div>
 
           <div className={styles.field}>
-            <Label.Root htmlFor="password" className={styles.label}>Password</Label.Root>
+            <Label.Root htmlFor="password" className={styles.label}>
+              Password
+            </Label.Root>
             <input
               id="password"
               type="password"

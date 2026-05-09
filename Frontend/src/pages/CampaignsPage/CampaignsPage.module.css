@@ -28,7 +28,9 @@
   padding: 1.5rem;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
 }
 
 .card:hover {
@@ -63,9 +65,18 @@
   color: var(--color-text-muted);
 }
 
-.status.active  { background-color: rgba(74, 222, 128, 0.15); color: var(--color-success); }
-.status.funded  { background-color: rgba(168, 85, 247, 0.15); color: var(--color-primary); }
-.status.closed  { background-color: var(--color-surface-alt); color: var(--color-text-muted); }
+.status.active {
+  background-color: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+.status.funded {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: var(--color-primary);
+}
+.status.closed {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
 
 .cardTitle {
   font-size: 1.0625rem;

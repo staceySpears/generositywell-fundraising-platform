@@ -10,7 +10,7 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,      // 30 s before background refetch
+      staleTime: 30_000, // 30 s before background refetch
       retry: 1,
     },
   },
