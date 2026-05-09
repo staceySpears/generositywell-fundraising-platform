@@ -3,15 +3,12 @@ package com.kenzie.appserver.repositories;
 import com.kenzie.appserver.repositories.model.UserRecord;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
-import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.Expression;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-import java.util.Map;
 import java.util.Optional;
 
 /** DynamoDB persistence layer for {@link UserRecord}. */
@@ -19,11 +16,14 @@ import java.util.Optional;
 public class UserDao {
 
     private static final String TABLE_NAME = "Users";
+    private static final String EMAIL_INDEX = "email-index";
 
     private final DynamoDbTable<UserRecord> userTable;
+    private final DynamoDbIndex<UserRecord> emailIndex;
 
     public UserDao(DynamoDbEnhancedClient enhancedClient) {
         this.userTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(UserRecord.class));
+        this.emailIndex = userTable.index(EMAIL_INDEX);
     }
 
     /**
@@ -69,20 +69,19 @@ public class UserDao {
     }
 
     /**
-     * Finds a user by email address via a filtered full table scan.
-     * This is O(n) — replace with a GSI-backed query when the table grows.
+     * Finds a user by email address using the {@code email-index} GSI.
+     * O(1) DynamoDB query — replaces the previous O(n) full table scan.
+     * Requires the {@code email-index} GSI to exist on the {@code Users} table
+     * (see {@code UsersTable.yml}).
      *
      * @param email the email address to search for
      * @return an Optional containing the matching user, or empty if not found
      */
     public Optional<UserRecord> findByEmail(String email) {
-        Expression filter = Expression.builder()
-                .expression("email = :email")
-                .expressionValues(Map.of(":email", AttributeValue.builder().s(email).build()))
-                .build();
-        return userTable.scan(ScanEnhancedRequest.builder().filterExpression(filter).build())
-                .items()
-                .stream()
+        QueryConditional condition = QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(email).build());
+        return emailIndex.query(condition).stream()
+                .flatMap(page -> page.items().stream())
                 .findFirst();
     }
 }
