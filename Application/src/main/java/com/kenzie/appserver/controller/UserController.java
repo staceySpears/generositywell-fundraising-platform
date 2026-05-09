@@ -4,6 +4,7 @@ import com.kenzie.appserver.controller.model.*;
 import com.kenzie.appserver.service.CampaignService;
 import com.kenzie.appserver.service.FundraisingEventService;
 import com.kenzie.appserver.service.UserService;
+import com.kenzie.appserver.controller.model.DonationSummaryResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -108,6 +109,30 @@ public class UserController {
     @GetMapping("/{id}/events")
     public ResponseEntity<List<EventResponse>> getEventsByUser(@PathVariable("id") String id) {
         return ResponseEntity.ok(eventService.getEventsByOrganizer(id));
+    }
+
+    /**
+     * {@code GET /users/{id}/donations} — returns the user's giving history.
+     * One entry per campaign the user has donated to, sorted newest-first.
+     *
+     * @param id the user ID
+     * @return 200 with the list (may be empty)
+     */
+    @GetMapping("/{id}/donations")
+    public ResponseEntity<List<DonationSummaryResponse>> getDonationsByUser(@PathVariable("id") String id) {
+        return ResponseEntity.ok(campaignService.getDonationsByUser(id));
+    }
+
+    /**
+     * {@code GET /users/{id}/rsvps} — returns all events the user has RSVPed to.
+     * Excludes CANCELLED RSVPs. Sorted by event date ascending.
+     *
+     * @param id the user ID
+     * @return 200 with the list (may be empty)
+     */
+    @GetMapping("/{id}/rsvps")
+    public ResponseEntity<List<EventResponse>> getRsvpsByUser(@PathVariable("id") String id) {
+        return ResponseEntity.ok(eventService.getRsvpsByUser(id));
     }
 
 }

@@ -7,14 +7,18 @@ import com.kenzie.appserver.controller.model.CreateCampaignRequest;
 import com.kenzie.appserver.repositories.CampaignDao;
 import com.kenzie.appserver.repositories.model.CampaignRecord;
 import com.kenzie.appserver.salesforce.SalesforceService;
+import com.kenzie.appserver.controller.model.DonationSummaryResponse;
 import com.kenzie.appserver.service.model.AuditAction;
 import com.kenzie.appserver.service.model.AuditEntityType;
 import com.kenzie.appserver.service.model.CampaignStatus;
+import com.kenzie.appserver.service.model.Supporter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,15 +185,18 @@ public class CampaignService {
     /**
      * Records a donation against a campaign and flips status to FUNDED when the goal is met.
      * Triggers an async Salesforce Opportunity sync after saving.
+     * When {@code donorId} is non-null the donor's cumulative total is tracked in the
+     * campaign's {@code supporters} list so giving history can be queried later.
      *
      * @param campaignId    the campaign to donate to
      * @param amountInCents the donation amount in cents (must be a positive value)
+     * @param donorId       the authenticated donor's user ID, or {@code null} for webhook/anonymous paths
      * @return the updated campaign response
      * @throws org.springframework.web.server.ResponseStatusException 400 if campaignId is blank
      *         or amountInCents is null, zero, or negative; 404 if not found;
      *         409 if the campaign is already closed
      */
-    public CampaignResponse addDonation(String campaignId, Long amountInCents) {
+    public CampaignResponse addDonation(String campaignId, Long amountInCents, String donorId) {
         if (campaignId == null || campaignId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID cannot be empty");
         }
@@ -210,6 +217,27 @@ public class CampaignService {
 
         if (newTotal >= record.getGoalAmount() && CampaignStatus.ACTIVE.name().equals(record.getStatus())) {
             record.setStatus(CampaignStatus.FUNDED.name());
+        }
+
+        // Track the donor in the supporters list when a userId is available.
+        if (donorId != null) {
+            List<Supporter> supporters = record.getSupporters() != null
+                    ? new ArrayList<>(record.getSupporters()) : new ArrayList<>();
+            Supporter existing = supporters.stream()
+                    .filter(s -> donorId.equals(s.getId()))
+                    .findFirst().orElse(null);
+            if (existing != null) {
+                existing.setAmountInCents(
+                        (existing.getAmountInCents() != null ? existing.getAmountInCents() : 0L) + amountInCents);
+                existing.setDonationDate(LocalDate.now().toString());
+            } else {
+                Supporter supporter = new Supporter();
+                supporter.setId(donorId);
+                supporter.setAmountInCents(amountInCents);
+                supporter.setDonationDate(LocalDate.now().toString());
+                supporters.add(supporter);
+            }
+            record.setSupporters(supporters);
         }
 
         campaignDao.save(record);
@@ -312,6 +340,40 @@ public class CampaignService {
         }
         return campaignDao.findByUserId(userId).stream()
                 .map(this::recordToResponse)
+                .toList();
+    }
+
+    /**
+     * Returns a giving-history summary for the given user — one entry per campaign
+     * where they have a tracked donation.
+     *
+     * @param userId the donor's user ID
+     * @return list of donation summaries, newest donation date first
+     * @throws ResponseStatusException 400 if userId is blank
+     */
+    public List<DonationSummaryResponse> getDonationsByUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be empty");
+        }
+        return campaignDao.findByDonorId(userId).stream()
+                .map(record -> {
+                    Supporter entry = record.getSupporters().stream()
+                            .filter(s -> userId.equals(s.getId()))
+                            .findFirst().orElse(null);
+                    DonationSummaryResponse summary = new DonationSummaryResponse();
+                    summary.setCampaignId(record.getId());
+                    summary.setCampaignName(record.getName());
+                    summary.setAmountInCents(entry != null ? entry.getAmountInCents() : null);
+                    summary.setDonationDate(entry != null ? entry.getDonationDate() : null);
+                    return summary;
+                })
+                .sorted((a, b) -> {
+                    // Most recent donation date first; nulls last
+                    if (a.getDonationDate() == null && b.getDonationDate() == null) return 0;
+                    if (a.getDonationDate() == null) return 1;
+                    if (b.getDonationDate() == null) return -1;
+                    return b.getDonationDate().compareTo(a.getDonationDate());
+                })
                 .toList();
     }
 

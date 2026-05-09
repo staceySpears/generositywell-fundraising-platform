@@ -106,4 +106,19 @@ public class FundraisingEventDao {
                 .filter(r -> r.getOrganizer() != null && organizerId.equals(r.getOrganizer().getId()))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Returns all events where the given user has an active (non-CANCELLED) RSVP.
+     * Uses a client-side filter over a full table scan.
+     *
+     * @param volunteerId the volunteer's user ID
+     * @return list of events the user has RSVPed to
+     */
+    public List<FundraisingEventRecord> findByVolunteerId(String volunteerId) {
+        return findAll().stream()
+                .filter(r -> r.getVolunteers() != null && r.getVolunteers().stream()
+                        .anyMatch(v -> volunteerId.equals(v.getId())
+                                && !"CANCELLED".equals(v.getRsvpStatus())))
+                .collect(Collectors.toList());
+    }
 }

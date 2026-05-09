@@ -100,18 +100,22 @@ public class CampaignController {
 
     /**
      * {@code POST /campaigns/{campaignId}/donate} — records a donation directly.
-     * This is the direct path used for testing and non-card flows; the Stripe webhook
-     * is the production path for card payments. Public endpoint.
+     * This is the direct path used for front-end card flows; the Stripe webhook
+     * is the production path after card confirmation. When a valid JWT is present the
+     * donor's ID is captured for giving-history tracking.
      *
-     * @param campaignId the campaign to donate to
-     * @param request    the donation amount in cents
+     * @param campaignId     the campaign to donate to
+     * @param request        the donation amount in cents
+     * @param authentication the authenticated principal (may be {@code null} for anonymous)
      * @return 200 with the updated campaign
      */
     @PostMapping("/{campaignId}/donate")
     public ResponseEntity<CampaignResponse> donate(
             @PathVariable("campaignId") String campaignId,
-            @Valid @RequestBody DonationRequest request) {
-        CampaignResponse response = campaignService.addDonation(campaignId, request.getAmount());
+            @Valid @RequestBody DonationRequest request,
+            Authentication authentication) {
+        String donorId = authentication != null ? authentication.getName() : null;
+        CampaignResponse response = campaignService.addDonation(campaignId, request.getAmount(), donorId);
         return ResponseEntity.ok(response);
     }
 
