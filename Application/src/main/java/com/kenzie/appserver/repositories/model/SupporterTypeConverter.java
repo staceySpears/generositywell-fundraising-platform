@@ -64,6 +64,9 @@ public class SupporterTypeConverter implements AttributeConverter<List<Supporter
      */
     @Override
     public List<Supporter> transformTo(AttributeValue input) {
+        if (input == null || Boolean.TRUE.equals(input.nul()) || input.l() == null) {
+            return new java.util.ArrayList<>();
+        }
         return input.l().stream().map(av -> {
             String raw = av.s();
             Supporter supporter = new Supporter();

@@ -139,7 +139,18 @@ public class FundraisingEventService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Volunteer ID cannot be empty");
         }
         return eventDao.findByVolunteerId(volunteerId).stream()
-                .map(this::recordToResponse)
+                .map(record -> {
+                    EventResponse response = recordToResponse(record);
+                    // Strip all volunteer entries except the caller's own to avoid
+                    // exposing other attendees' names and emails.
+                    if (response.getVolunteers() != null) {
+                        response.setVolunteers(
+                                response.getVolunteers().stream()
+                                        .filter(v -> volunteerId.equals(v.getId()))
+                                        .collect(java.util.stream.Collectors.toList()));
+                    }
+                    return response;
+                })
                 .sorted((a, b) -> {
                     if (a.getEventDate() == null && b.getEventDate() == null) return 0;
                     if (a.getEventDate() == null) return 1;
