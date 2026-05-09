@@ -31,5 +31,7 @@ lambda-service-development.yml
 # macOS
 .DS_Store
 
-# Claude Code worktrees and session data
+# Claude Code worktrees and session data (local-only)
 .claude/
+# …except shared slash commands, which belong in source control
+!.claude/commands/
