@@ -31,6 +31,22 @@ export const updateCampaign = async (campaignId, payload) => {
 };
 
 /**
+ * Creates a Stripe PaymentIntent for the given campaign and amount.
+ * Returns { clientSecret, paymentIntentId, amount }.
+ * Requires a valid JWT (Authorization header set by the Axios interceptor).
+ *
+ * @param {string} campaignId
+ * @param {number} amountInCents
+ * @returns {Promise<{ clientSecret: string, paymentIntentId: string, amount: number }>}
+ */
+export const createPaymentIntent = async (campaignId, amountInCents) => {
+  const { data } = await client.post(`/campaigns/${campaignId}/payment-intent`, {
+    amount: amountInCents,
+  });
+  return data;
+};
+
+/**
  * @param {string} campaignId
  * @param {number} amountInCents
  */

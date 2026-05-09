@@ -1,12 +1,15 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Label from '@radix-ui/react-label';
 import { QRCodeSVG } from 'qrcode.react';
-import { getCampaignById, donate } from '../../api/campaignApi.js';
+import { Elements } from '@stripe/react-stripe-js';
+import { getCampaignById, createPaymentIntent } from '../../api/campaignApi.js';
+import { stripePromise } from '../../lib/stripe.js';
 import { donationSchema } from '../../schemas/campaign.js';
+import StripePaymentForm from './StripePaymentForm.jsx';
 import styles from './CampaignDetailPage.module.css';
 
 /** Formats an ISO date string (e.g. "2026-05-01") as "May 1, 2026". */
@@ -44,10 +47,20 @@ function downloadQR(qrRef, campaignName) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Donation flow states:
+ *   'amount'  — user enters dollar amount
+ *   'card'    — Stripe PaymentElement shown for card entry
+ *   'success' — payment confirmed; webhook records the donation asynchronously
+ */
+
 export default function CampaignDetailPage() {
   const { id } = useParams();
-  const queryClient = useQueryClient();
   const qrRef = useRef(null);
+
+  // Donation flow state
+  const [paymentStep, setPaymentStep] = useState('amount');
+  const [pendingPayment, setPendingPayment] = useState(null); // { clientSecret, amountInCents }
 
   const {
     data: campaign,
@@ -65,15 +78,29 @@ export default function CampaignDetailPage() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(donationSchema) });
 
-  const mutation = useMutation({
-    mutationFn: ({ dollars }) => donate(id, Math.round(dollars * 100)),
-    onSuccess: () => {
-      // Invalidate both the detail and the list so both reflect the new total.
-      queryClient.invalidateQueries({ queryKey: ['campaigns', id] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+  // Step 1: create a PaymentIntent on the backend, then advance to the card step
+  const createIntentMutation = useMutation({
+    mutationFn: ({ dollars }) => createPaymentIntent(id, Math.round(dollars * 100)),
+    onSuccess: (data, variables) => {
+      setPendingPayment({
+        clientSecret: data.clientSecret,
+        amountInCents: Math.round(variables.dollars * 100),
+      });
+      setPaymentStep('card');
       reset();
     },
   });
+
+  const handlePaymentSuccess = () => {
+    setPaymentStep('success');
+    setPendingPayment(null);
+  };
+
+  const handleBackToAmount = () => {
+    setPaymentStep('amount');
+    setPendingPayment(null);
+    createIntentMutation.reset();
+  };
 
   if (isLoading) return <p className={styles.state}>Loading…</p>;
   if (isError) return <p className={styles.stateError}>Campaign not found.</p>;
@@ -115,47 +142,83 @@ export default function CampaignDetailPage() {
         </div>
 
         {!isClosed && (
-          <form
-            onSubmit={handleSubmit((values) => mutation.mutate(values))}
-            noValidate
-            className={styles.donateForm}
-          >
-            <h2 className={styles.donateTitle}>Make a donation</h2>
-            <div className={styles.field}>
-              <Label.Root htmlFor="dollars" className={styles.label}>
-                Amount (USD)
-              </Label.Root>
-              <div className={styles.inputWrapper}>
-                <span className={styles.currency}>$</span>
-                <input
-                  id="dollars"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="25"
-                  className={`${styles.input} ${errors.dollars ? styles.inputError : ''}`}
-                  {...register('dollars', {
-                    valueAsNumber: true,
-                    onChange: () => mutation.isSuccess && mutation.reset(),
-                  })}
+          <>
+            {/* ── Step 1: amount entry ──────────────────── */}
+            {paymentStep === 'amount' && (
+              <form
+                onSubmit={handleSubmit((values) => createIntentMutation.mutate(values))}
+                noValidate
+                className={styles.donateForm}
+              >
+                <h2 className={styles.donateTitle}>Make a donation</h2>
+                <div className={styles.field}>
+                  <Label.Root htmlFor="dollars" className={styles.label}>
+                    Amount (USD)
+                  </Label.Root>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.currency}>$</span>
+                    <input
+                      id="dollars"
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="25"
+                      className={`${styles.input} ${errors.dollars ? styles.inputError : ''}`}
+                      {...register('dollars', { valueAsNumber: true })}
+                    />
+                  </div>
+                  {errors.dollars && <span className={styles.error}>{errors.dollars.message}</span>}
+                </div>
+
+                {createIntentMutation.isError && (
+                  <p className={styles.serverError}>
+                    {createIntentMutation.error?.response?.data?.message ??
+                      'Could not start payment. Please try again.'}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className={styles.donateBtn}
+                  disabled={createIntentMutation.isPending}
+                >
+                  {createIntentMutation.isPending ? 'Preparing…' : 'Continue to payment →'}
+                </button>
+              </form>
+            )}
+
+            {/* ── Step 2: card entry via Stripe ─────────── */}
+            {paymentStep === 'card' && pendingPayment && (
+              <Elements
+                stripe={stripePromise}
+                options={{ clientSecret: pendingPayment.clientSecret }}
+              >
+                <StripePaymentForm
+                  amountInCents={pendingPayment.amountInCents}
+                  onSuccess={handlePaymentSuccess}
+                  onBack={handleBackToAmount}
                 />
+              </Elements>
+            )}
+
+            {/* ── Step 3: success ───────────────────────── */}
+            {paymentStep === 'success' && (
+              <div className={styles.successCard}>
+                <p className={styles.successHeading}>🎉 Thank you!</p>
+                <p className={styles.successNote}>
+                  Your payment is confirmed. The campaign total will update shortly as your donation
+                  is processed.
+                </p>
+                <button
+                  type="button"
+                  className={styles.backBtn}
+                  onClick={() => setPaymentStep('amount')}
+                >
+                  Donate again
+                </button>
               </div>
-              {errors.dollars && <span className={styles.error}>{errors.dollars.message}</span>}
-            </div>
-
-            {mutation.isError && (
-              <p className={styles.serverError}>
-                {mutation.error?.response?.data?.message ?? 'Donation failed. Please try again.'}
-              </p>
             )}
-            {mutation.isSuccess && (
-              <p className={styles.serverSuccess}>Thank you for your donation!</p>
-            )}
-
-            <button type="submit" className={styles.donateBtn} disabled={mutation.isPending}>
-              {mutation.isPending ? 'Processing…' : 'Donate'}
-            </button>
-          </form>
+          </>
         )}
 
         {isClosed && (

@@ -14,24 +14,29 @@ public class StripeService {
 
     /**
      * Creates a Stripe PaymentIntent for the given campaign and amount.
-     * The campaign ID is stored in the PaymentIntent metadata so the webhook
-     * handler can record the donation after payment succeeds.
+     * Both {@code campaignId} and {@code donorId} (when present) are stored in the
+     * PaymentIntent metadata so the webhook handler can record the donation—and
+     * attribute it to the authenticated donor—after payment succeeds.
      * Throws 502 if the Stripe API returns an error.
      *
-     * @param campaignId   the local campaign ID to attach to the payment intent metadata
+     * @param campaignId    the local campaign ID to attach to the payment intent metadata
      * @param amountInCents the amount to charge in the smallest currency unit (cents)
+     * @param donorId       the authenticated user ID, or {@code null} for anonymous payments
      * @return the client secret, payment intent ID, and amount
      */
-    public PaymentIntentResponse createPaymentIntent(String campaignId, Long amountInCents) {
+    public PaymentIntentResponse createPaymentIntent(String campaignId, Long amountInCents, String donorId) {
         try {
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+            PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .putMetadata("campaignId", campaignId)
-                    .addPaymentMethodType("card")
-                    .build();
+                    .addPaymentMethodType("card");
 
-            PaymentIntent intent = PaymentIntent.create(params);
+            if (donorId != null) {
+                builder.putMetadata("donorId", donorId);
+            }
+
+            PaymentIntent intent = PaymentIntent.create(builder.build());
             return new PaymentIntentResponse(intent.getClientSecret(), intent.getId(), amountInCents);
 
         } catch (StripeException e) {
