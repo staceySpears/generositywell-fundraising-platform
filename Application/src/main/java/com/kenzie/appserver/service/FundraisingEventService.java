@@ -473,9 +473,15 @@ public class FundraisingEventService {
      * @return a mutable HashMap containing the provided pairs
      */
     private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        if (keysAndValues == null || keysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("auditPayload requires an even number of alternating key/value pairs");
+        }
         Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
         for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
-            map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+            if (!(keysAndValues[i] instanceof String key)) {
+                throw new IllegalArgumentException("auditPayload key at index " + i + " must be a String");
+            }
+            map.put(key, keysAndValues[i + 1]);
         }
         return map;
     }

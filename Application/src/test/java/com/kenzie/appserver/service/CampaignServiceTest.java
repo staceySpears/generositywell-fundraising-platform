@@ -501,6 +501,8 @@ class CampaignServiceTest {
                 () -> campaignService.deleteCampaign(id, USER_ID)
         );
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(campaignDao, never()).deleteById(any());
+        verify(cache, never()).evict(any());
     }
 
     @Test
@@ -515,6 +517,8 @@ class CampaignServiceTest {
                 () -> campaignService.deleteCampaign(id, USER_ID)
         );
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(campaignDao, never()).deleteById(any());
+        verify(cache, never()).evict(any());
     }
 
     @Test

@@ -119,6 +119,12 @@ public class CampaignService {
      *         403 if the caller is not the owner, 409 if the campaign is closed
      */
     public CampaignResponse updateCampaign(CampaignUpdateRequest request, String requestingUserId) {
+        if (request == null || request.getId() == null || request.getId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign ID is required");
+        }
+        if (requestingUserId == null || requestingUserId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Requesting user ID is required");
+        }
         CampaignRecord record = campaignDao.findById(request.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
 
@@ -316,9 +322,15 @@ public class CampaignService {
      * @return a mutable HashMap containing the provided pairs
      */
     private static Map<String, Object> auditPayload(Object... keysAndValues) {
+        if (keysAndValues == null || keysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("auditPayload requires an even number of alternating key/value pairs");
+        }
         Map<String, Object> map = new HashMap<>(keysAndValues.length / 2);
         for (int i = 0; i + 1 < keysAndValues.length; i += 2) {
-            map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+            if (!(keysAndValues[i] instanceof String key)) {
+                throw new IllegalArgumentException("auditPayload key at index " + i + " must be a String");
+            }
+            map.put(key, keysAndValues[i + 1]);
         }
         return map;
     }
