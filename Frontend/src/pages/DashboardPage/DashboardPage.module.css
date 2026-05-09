@@ -1,0 +1,14 @@
+.container { }
+.state      { color: var(--color-text-muted); margin-top: 2rem; }
+.stateError { color: var(--color-error); margin-top: 2rem; }
+.heading { font-size: 1.75rem; font-weight: 700; margin-bottom: 2rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+.card { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.5rem; }
+.cardTitle { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+.dl { display: grid; grid-template-columns: auto 1fr; gap: 0.375rem 1rem; font-size: 0.875rem; }
+.dl dt { color: var(--color-text-muted); }
+.dl dd { color: var(--color-text); }
+.quickLinks { list-style: none; display: flex; flex-direction: column; gap: 0.625rem; }
+.quickLinks li a { font-size: 0.9375rem; }
+.placeholder { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; }
+.comingSoon { border-style: dashed; }
