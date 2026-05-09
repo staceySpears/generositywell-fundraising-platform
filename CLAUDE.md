@@ -10,6 +10,7 @@ modernized and extended into a fundraising domain.
 ---
 
 ## Current Stack (fully built — do not re-implement)
+
 | Layer | Technology |
 |---|---|
 | REST API | Spring Boot 3.2.5 / Java 21 |
@@ -35,7 +36,7 @@ modernized and extended into a fundraising domain.
 ---
 
 ## Repository Structure
-```
+```text
 generositywell-fundraising-platform/
 ├── Application/src/main/java/com/kenzie/appserver/
 │   ├── config/           — CacheStore (Caffeine), DynamoDbConfig, AsyncConfig, StripeConfig
@@ -125,6 +126,7 @@ generositywell-fundraising-platform/
 ---
 
 ## Frontend Pages (all built)
+
 | Page | Route | Notes |
 |---|---|---|
 | Landing | `/` | Public marketing page |
@@ -179,7 +181,7 @@ Or from inside Claude Code: `/cr-fix`
 ---
 
 ## Coding Standards
-- **Never store money as `double`/`float`** — always `Long` (cents)
+- **Never store money as `double`/`float`** — see *Key Architectural Decisions* above
 - **Never compare Strings with `==`** — use `.equals()` or `.isBlank()`
 - **Never hardcode secrets** — use `@Value("${property}")` + env vars
 - **Null-safe ownership checks** — `Objects.equals(requestingUserId, record.getUser().getId())`
