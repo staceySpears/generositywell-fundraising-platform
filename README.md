@@ -92,17 +92,49 @@ This project demonstrates how a modern, cloud-native application can seamlessly 
 
 ## Frontend
 
-### Stack
+### Current State
 
-| Tool | Role |
-|---|---|
-| React 18 | Component-based UI |
-| Vite | Replaces Webpack 4; fast dev server with HMR, optimized production builds |
-| React Router v6 | Client-side routing (replaces 8 separate HTML files) |
-| Axios | HTTP client consuming the Spring Boot REST API (updated from 0.21.x) |
-| CSS Modules | Scoped per-component styles (replaces 6 scattered global CSS files) |
+The frontend is the original capstone build — Webpack 4, vanilla JS, and 8 separate HTML files. It functions but does not yet use React, component-based routing, or a modern build tool. The React + Vite migration is the first deliverable in Phase 3.
 
-### Pages / Routes
+**Current stack:**
+
+| Tool | Version | Note |
+|---|---|---|
+| Webpack | 4 | Build tool; will be replaced by Vite |
+| Vanilla JS | — | No framework; pages are standalone HTML files |
+| Axios | 0.21.1 | HTTP client; will be updated |
+
+**Current dev server:**
+
+```bash
+cd Frontend
+npm install
+npm start        # webpack-dev-server on port 8080
+```
+
+**Current build:**
+
+```bash
+npm run build    # outputs to Frontend/dist/
+```
+
+---
+
+### Planned Stack (Phase 3+)
+
+| Tool | Role | Phase |
+|---|---|---|
+| React 18 | Component-based UI | Phase 3 |
+| Vite | Fast dev server with HMR, optimized production builds | Phase 3 |
+| React Router v6 | Client-side routing (replaces 8 separate HTML files) | Phase 3 |
+| Axios (updated) | HTTP client with JWT interceptors | Phase 3 |
+| TanStack Query | Server-state management — caching, background refetch, stale-data invalidation for live donation totals | Phase 3 |
+| React Hook Form + Zod | Client-side validation mirroring Spring Boot Bean Validation; Zod schemas shared with the future React Native app | Phase 3 |
+| Radix UI | Headless, accessible UI primitives compatible with CSS Modules | Phase 3 |
+| CSS Modules | Scoped per-component styles | Phase 3 |
+| vite-plugin-pwa | Web app manifest + service worker; "Add to Home Screen" on any device | Phase 4 |
+
+### Planned Pages / Routes (Phase 3)
 
 | Route | Component | Access |
 |---|---|---|
@@ -116,24 +148,6 @@ This project demonstrates how a modern, cloud-native application can seamlessly 
 | `/dashboard` | `DashboardPage` | Authenticated |
 | `/events` | `EventsPage` | Authenticated |
 | `/calendar` | `CalendarPage` | Authenticated |
-
-### Local Development
-
-```bash
-cd Frontend
-npm install
-npm run dev
-```
-
-The Vite dev server proxies `/api/*` to `http://localhost:5001`, matching the Spring Boot dev port.
-
-### Build
-
-```bash
-npm run build
-```
-
-Output is written to `Frontend/dist/` and can be deployed to any static host (AWS S3 + CloudFront recommended).
 
 ---
 
@@ -188,9 +202,9 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 
 | Phase | Focus | Status |
 |---|---|---|
-| **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling, React + Vite frontend | ✅ Complete |
+| **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling | ✅ Complete |
 | **Phase 2 — Domain Rename & Model Cleanup** | Rename capstone entities to platform domain, eliminate duplicate models, add Bean Validation, proper date types | 🔄 In Progress |
-| **Phase 3 — Feature Completion** | Campaign + event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
+| **Phase 3 — Feature Completion** | React + Vite migration, campaign event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
 | **Phase 4 — Platform Enhancements** | Stripe donations, Lambda webhook handler, impact reporting, donor dashboard, Salesforce Data Cloud + Agentforce | Planned |
 | **Phase 5 — Production Hardening** | CI/CD pipeline, S3 + CloudFront deploy, E2E tests, rate limiting, API Gateway | Planned |
 
@@ -201,8 +215,9 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 - Direct DynamoDB access via Enhanced Client (removed Lambda proxy layer)
 - Multi-module Gradle structure established
 - Docker-based local DynamoDB dev infrastructure
-- Frontend migrated from Webpack 4 / vanilla JS to React + Vite
 - Global exception handling with `@RestControllerAdvice`
+
+> **Frontend note:** The frontend is currently the original capstone build (Webpack 4, vanilla JS, 8 separate HTML files). The React + Vite migration is the first item in Phase 3.
 
 ### Phase 2 — Domain Rename & Model Cleanup 🔄
 
@@ -215,12 +230,21 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 
 ### Phase 3 — Feature Completion
 
-- `Campaign` entity with goal, timeline, and status lifecycle (`DRAFT → ACTIVE → CLOSED`)
+**Frontend migration (prerequisite for all frontend feature work):**
+- Replace Webpack 4 + vanilla JS with React 18 + Vite
+- Migrate 8 standalone HTML pages to React components with React Router v6
+- Wire Axios with JWT interceptors for authenticated routes
+- Add TanStack Query for server-state management
+- Add React Hook Form + Zod for client-side form validation
+- Add Radix UI headless component primitives
+
+**Backend feature work (largely complete — see Phase 1/2 PRs):**
+- ✅ `Campaign` entity with goal, timeline, and status lifecycle (`ACTIVE → FUNDED → CLOSED`)
+- ✅ JWT auth / Spring Security — register, login, stateless token validation
+- ✅ Salesforce REST API integration — sync users, campaigns, and donations
 - `FundraisingEvent` linked to a Campaign
 - Volunteer RSVP flow — attendees can commit time, not just money
-- JWT auth / Spring Security — register, login, role-based access (`ORGANIZER`, `DONOR`)
-- Salesforce REST API integration — sync users, campaigns, and donations as they are created
-- Frontend auth flow — login, register, protected routes, Axios interceptors
+- Role-based access control (`ORGANIZER`, `DONOR`)
 
 ### Phase 4 — Platform Enhancements
 
