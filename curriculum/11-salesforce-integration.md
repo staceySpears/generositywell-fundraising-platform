@@ -1,9 +1,5 @@
 # 11 — Salesforce Integration: The Two-Layer Architecture
 
-> **Phase 3 — Not yet implemented.**
-
----
-
 ## Why this exists
 
 Nonprofits already live in Salesforce. Their donor lists, grant tracking, email campaigns, and
@@ -21,32 +17,53 @@ run reports, and track campaign health entirely in Salesforce — the tool they 
 
 ---
 
-## The pieces you will build
+## The two-layer principle in practice
 
-**OAuth 2.0 Connected App** — Salesforce uses OAuth 2.0 (client credentials flow for server-to-server)
-to authenticate API calls from GenerosityWell.
+The key architectural rule: **DynamoDB first, Salesforce second.**
 
-**`SalesforceClient`** — a Spring `@Service` that wraps the Salesforce REST API:
-- `createContact(User user)` — called when a user registers
-- `createOpportunity(Donation donation)` — called when a donation is confirmed
-- `updateCampaign(Campaign campaign)` — syncs campaign goal and raised amount
+When a user registers, the sequence is:
+1. `UserService.createUser` saves the new user to DynamoDB
+2. `UserService.createUser` calls `salesforceService.syncContact(user)` — async
 
-**Event hooks in services** — `UserService.createUser` calls `salesforceClient.createContact` after
-saving to DynamoDB. Order matters: DynamoDB first (your system of record), Salesforce second
-(downstream sync). A Salesforce failure should not roll back the user registration.
+A Salesforce API failure (rate limit, network blip, credentials rotation) must not roll back
+the user registration. DynamoDB is the system of record. Salesforce is a downstream subscriber.
+If the sync fails, the data can be replayed; if the registration fails, the user is lost.
+
+This is why the Salesforce calls are `@Async` — they run on a separate thread and cannot block
+or throw into the calling transaction.
 
 ---
 
-## What to understand before you build this
+## The implementation
+
+`SalesforceClient` wraps the Salesforce REST API using a `RestTemplate`. It handles the OAuth
+2.0 client credentials flow (server-to-server: no user interaction, no redirect) to obtain an
+access token, then makes API calls to create and update Salesforce records.
+
+`SalesforceService` is the Spring `@Service` that orchestrates the sync logic. It is injected
+into `UserService` and `CampaignService`. Both services call it after their own writes succeed.
+The `@Async` annotation means each sync call runs in a thread pool managed by `AsyncConfig` —
+the calling service method returns immediately.
+
+The sync targets:
+- **User registration** → Salesforce `Contact` (NPSP standard object)
+- **Donation confirmed** → Salesforce `Opportunity` (NPSP standard object for donations)
+- **Campaign updated** → Salesforce Campaign record
+
+---
+
+## What to understand
 
 1. What is the difference between OAuth 2.0 authorization code flow and client credentials flow?
-   Which is appropriate for server-to-server communication?
-2. Salesforce has rate limits (API call limits per day). How would you handle a Salesforce API
+   Which is appropriate for server-to-server communication, and why?
+2. Salesforce has API call limits per day (per org). How would you handle a Salesforce API
    failure without losing the data that was supposed to sync?
 3. What is Salesforce NPSP, and what standard objects does it add (`Opportunity`, `Contact`,
    `Account`)?
-4. If GenerosityWell is the system of record for transactions, what does "Salesforce as the
-   system of record" mean? What is Salesforce the authoritative source for?
+4. Why are the Salesforce sync calls `@Async`? What would happen if they were synchronous?
+5. If the Salesforce sync fails for a donation, the donation is recorded in DynamoDB but not
+   in Salesforce. How would you detect and replay missed syncs? (Hint: the AuditLog table
+   records every PAYMENT_SUCCEEDED event with campaignId and donorId.)
 
 ---
 

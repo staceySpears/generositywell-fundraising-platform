@@ -71,18 +71,18 @@ familiar. The code is the easy part. The reasoning is what gets tested in interv
 | 03 | AWS SDK v2 migration | 1 | ✅ Complete |
 | 04 | Removing the Lambda proxy | 1 | ✅ Complete |
 | 05 | Global exception handling | 1 | ✅ Complete |
-| 06 | Domain modeling and naming | 2 | 🔄 In Progress |
-| 07 | Caffeine cache | 2 | 🔄 In Progress |
-| 08 | Bean validation | 2 | 🔄 In Progress |
-| 09 | Campaign entity and status lifecycle | 3 | Planned |
-| 10 | Spring Security and JWT auth | 3 | Planned |
-| 11 | Salesforce integration | 3 | Planned |
-| 12 | Stripe integration | 4 | Planned |
-| 13 | Lambda webhooks (intentional) | 4 | Planned |
-| 14 | Impact reporting | 4 | Planned |
-| 15 | Agentforce and Data Cloud | 4 | Planned |
-| 16 | CI/CD pipeline | 5 | Planned |
-| 17 | Observability | 5 | Planned |
+| 06 | Domain modeling and naming | 2 | ✅ Complete |
+| 07 | Caffeine cache | 2 | ✅ Complete |
+| 08 | Bean validation | 2 | ✅ Complete |
+| 09 | Campaign entity, Supporter model, status lifecycle | 3 | ✅ Complete |
+| 10 | Spring Security and JWT auth | 3 | ✅ Complete |
+| 11 | Salesforce integration | 3 | ✅ Complete |
+| 12 | Stripe integration (backend + React frontend) | 4 | ✅ Complete |
+| 13 | Webhook handling: Spring Boot vs Lambda | 4 | ✅ Complete |
+| 14 | Impact reporting | 4 | ⏸ Planned |
+| 15 | Agentforce and Data Cloud | 4 | ⏸ Planned |
+| 16 | CI/CD pipeline | 5 | 🔄 In Progress |
+| 17 | Observability | 5 | ⏸ Planned |
 
 ---
 
@@ -93,6 +93,8 @@ Make sure you can answer these questions about the current state of the repo:
 - What does `./gradlew :Application:compileJava` do, and why does it compile more than just the Application module?
 - What is `JAVA_HOME` and why does this project require it to point to Java 21 specifically?
 - What was the Lambda layer doing before it was removed, and why was removing it the right call?
-- What is a DAO, and how is `EventDao` different from the old `EventRepository`?
+- What is a DAO, and how is `CampaignDao` different from the old repository interfaces the capstone used?
+- Why does `StripeWebhookController` use signature verification instead of JWT? What does Stripe send and what does it prove?
+- The `Supporter` model uses two serialization formats. What changed between v1 and v2, and why does the converter still read both?
 
-If you cannot answer all four, start at Module 01.
+If you cannot answer the first four, start at Module 01.
