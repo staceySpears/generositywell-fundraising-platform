@@ -16,7 +16,7 @@ export default function LandingPage() {
           <Link to="/campaigns" className={styles.primaryBtn}>
             Browse campaigns
           </Link>
-          <Link to="/register" className={styles.secondaryBtn}>
+          <Link to="/create-campaign" className={styles.secondaryBtn}>
             Start a campaign
           </Link>
         </div>
@@ -38,10 +38,10 @@ export default function LandingPage() {
         </div>
         <div className={styles.featureCard}>
           <span className={styles.featureIcon}>📊</span>
-          <h3>Impact reporting</h3>
+          <h3>Giving history</h3>
           <p>
-            Organizers post structured updates. Donors see exactly what their contribution
-            accomplished.
+            Track your contributions over time. Your dashboard shows exactly how much you&apos;ve
+            given to each campaign.
           </p>
         </div>
       </section>

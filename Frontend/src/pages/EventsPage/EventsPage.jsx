@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllEvents, rsvpToEvent, cancelRsvp } from '../../api/eventApi.js';
+import { getUserById } from '../../api/userApi.js';
 import { useAuth } from '../../hooks/useAuth.js';
 import styles from './EventsPage.module.css';
 
@@ -31,6 +32,14 @@ export default function EventsPage() {
   } = useQuery({
     queryKey: ['events'],
     queryFn: getAllEvents,
+  });
+
+  // Fetch profile so RSVPs carry the user's real name and email.
+  // Only runs when the user is logged in; disabled for anonymous visitors.
+  const { data: userProfile } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => getUserById(userId),
+    enabled: isAuthenticated && !!userId,
   });
 
   const rsvpMutation = useMutation({
@@ -69,13 +78,13 @@ export default function EventsPage() {
 
   const handleRsvp = (event) => {
     setRsvpError((prev) => ({ ...prev, [event.id]: null }));
-    // In a real app the name/email come from the user's profile.
-    // For now we pull them from the JWT claims stored alongside the token.
-    const name = localStorage.getItem('gw_userName') ?? 'Volunteer';
-    const email = localStorage.getItem('gw_userEmail') ?? '';
     rsvpMutation.mutate({
       eventId: event.id,
-      payload: { volunteerId: userId, volunteerName: name, volunteerEmail: email },
+      payload: {
+        volunteerId: userId,
+        volunteerName: userProfile?.name ?? '',
+        volunteerEmail: userProfile?.email ?? '',
+      },
     });
   };
 
