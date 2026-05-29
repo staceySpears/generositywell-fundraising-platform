@@ -15,7 +15,7 @@ Use this after CodeRabbit's green check appears on GitHub. Running it too early 
 
 ## When to run
 
-```
+```bash
 git push
 # wait ~90 seconds for the CodeRabbit status check to go green on GitHub
 /cr-fix

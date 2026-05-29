@@ -36,7 +36,9 @@ export default function EventsPage() {
 
   // Fetch profile so RSVPs carry the user's real name and email.
   // Only runs when the user is logged in; disabled for anonymous visitors.
-  const { data: userProfile } = useQuery({
+  // isProfileLoading is used to keep the RSVP button disabled until the
+  // profile resolves — avoids submitting empty name/email before the fetch completes.
+  const { data: userProfile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn: () => getUserById(userId),
     enabled: isAuthenticated && !!userId,
@@ -96,7 +98,10 @@ export default function EventsPage() {
   const renderEvent = (event) => {
     const existing = myRsvp(event);
     const isScheduled = event.status === 'SCHEDULED';
+    // Also block the RSVP button while the user profile is still loading so
+    // we never submit an empty volunteerName / volunteerEmail to the backend.
     const isBusy =
+      (isAuthenticated && isProfileLoading) ||
       (rsvpMutation.isPending && rsvpMutation.variables?.eventId === event.id) ||
       (cancelMutation.isPending && cancelMutation.variables?.eventId === event.id);
 
