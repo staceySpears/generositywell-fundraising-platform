@@ -27,11 +27,13 @@ export default function App() {
         <Route path="/campaigns" element={<CampaignsPage />} />
         <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
 
+        {/* Public but auth-aware routes */}
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+
         {/* Authenticated routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
         </Route>
 
         {/* Catch-all — renders inside Layout so the nav is still visible */}
