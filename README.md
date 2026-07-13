@@ -6,6 +6,23 @@ GenerosityWell is a **hyperlocal, community-first** fundraising platform designe
 
 At its core, the platform is built to eliminate friction and build trust through radical **campaign transparency**. By closing the loop with structured impact reporting, GenerosityWell ensures that every contributor sees exactly how their hours or dollars drove real-world change.
 
+## Project provenance
+
+GenerosityWell began as a Kenzie Academy/Southern New Hampshire University
+team capstone completed during the 2021–2022 software-engineering program. The
+original application was collaborative work; repository history and credited
+commits should be used to attribute individual contributions.
+
+From March through May 2026, Stacey Spears independently refactored and
+modernized supported parts of the project, including backend, persistence,
+integration, testing, review, and modernization work reflected in the current
+repository history. The 2026 refactor does not imply sole authorship of the
+original capstone.
+
+Development was AI-assisted. Credited work reflects human direction,
+requirements definition, review, correction, testing, integration, validation,
+and documentation — not generated-code volume.
+
 ---
 
 ## Architecture
@@ -205,7 +222,7 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 | **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling | ✅ Complete |
 | **Phase 2 — Domain Rename & Model Cleanup** | Rename capstone entities to platform domain, eliminate duplicate models, add Bean Validation, proper date types | 🔄 In Progress |
 | **Phase 3 — Feature Completion** | React + Vite migration, campaign event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
-| **Phase 4 — Platform Enhancements** | Stripe donations, Lambda webhook handler, impact reporting, donor dashboard, PWA, Salesforce Data Cloud + Agentforce | Planned |
+| **Phase 4 — Platform Enhancements** | Productionize the existing Stripe PaymentIntent, PaymentElement, and Spring webhook foundation; add the planned Lambda webhook architecture, impact reporting, donor dashboard, PWA, Salesforce Data Cloud + Agentforce | 🔄 Partial / Planned |
 | **Phase 5 — Production Hardening** | CI/CD pipeline, S3 + CloudFront deploy, E2E tests, rate limiting, API Gateway | Planned |
 | **Phase 6 — Mobile** | React Native + Expo donor/volunteer app; Salesforce Lightning Web Components for organizer mobile | Planned |
 
@@ -249,8 +266,16 @@ The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagge
 
 ### Phase 4 — Platform Enhancements
 
-- `Donation` entity backed by Stripe PaymentIntent API
-- AWS Lambda Stripe webhook handler — processes payment events asynchronously
+The repository already contains Stripe PaymentIntent service/API code, a React
+PaymentElement flow, Stripe configuration, and a Spring webhook controller.
+Those components are implementation foundations, not evidence of a deployed or
+commercially validated payment workflow. The separate AWS Lambda webhook
+architecture remains planned.
+
+- ✅ Stripe PaymentIntent service/API implementation
+- ✅ React PaymentElement integration
+- ✅ Spring Stripe webhook controller
+- AWS Lambda Stripe webhook handler — planned asynchronous payment-event processing
 - Structured impact reporting — organizers post updates; donors see their contribution's effect
 - Donor dashboard — giving history, volunteer hours, campaigns followed
 - **Progressive Web App (PWA)** — `vite-plugin-pwa` adds a web app manifest and service worker to the existing React/Vite SPA; donors and volunteers can "Add to Home Screen" on any device without an app store; eliminates friction for one-time contributors
