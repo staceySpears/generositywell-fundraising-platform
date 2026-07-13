@@ -2,22 +2,22 @@
 
 ## Why this exists
 
-A multi-module Gradle build is how you enforce separation of concerns at the *build* level, not
-just the *code* level. Without it, you can import anything from anywhere and nothing stops you.
+A multi-module Gradle build is how you enforce separation of concerns at the _build_ level, not
+just the _code_ level. Without it, you can import anything from anywhere and nothing stops you.
 With it, a module can only use code from modules it explicitly declares as dependencies — the
 build fails otherwise.
 
 The capstone used this structure from the start. The modules are:
 
-| Module | What it does |
-|---|---|
-| `Application` | Spring Boot REST API — your controllers, services, DAOs, and config |
-| `ServiceLambda` | AWS Lambda functions — currently dormant, will become the Stripe webhook handler in Phase 4 |
-| `ServiceLambdaModel` | Shared DTOs across the Lambda boundary |
-| `ServiceLambdaJavaClient` | HTTP client the Spring app used to call the Lambda — removed in Phase 1 |
-| `Frontend` | React + Vite SPA |
-| `IntegrationTests` | Testcontainers-backed integration test suite |
-| `Utilities` | Shared build helpers and Jacoco config |
+| Module                    | What it does                                                              |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `Application`             | Spring Boot REST API — your controllers, services, DAOs, and config       |
+| `ServiceLambda`           | Legacy capstone Lambda module; not the current Spring Stripe webhook path |
+| `ServiceLambdaModel`      | Legacy shared DTOs retained during cleanup                                |
+| `ServiceLambdaJavaClient` | HTTP client the Spring app used to call the Lambda — removed in Phase 1   |
+| `Frontend`                | React + Vite SPA                                                          |
+| `IntegrationTests`        | Testcontainers-backed integration test suite                              |
+| `Utilities`               | Shared build helpers and Jacoco config                                    |
 
 The key insight: **modules enforce contracts**. When `ServiceLambdaJavaClient` was a dependency
 of `Application`, anything in `ServiceLambdaJavaClient` was available to your Spring app. When
@@ -63,7 +63,7 @@ dependencies {
 }
 ```
 
-Notice what is *not* here: `implementation project(":ServiceLambdaModel")` and
+Notice what is _not_ here: `implementation project(":ServiceLambdaModel")` and
 `implementation project(":ServiceLambdaJavaClient")`. These were removed in Phase 1 when
 the Lambda proxy was eliminated. Before removal, Application could use any class from those
 modules. After removal, any remaining references were compile errors — which is exactly how
@@ -78,11 +78,12 @@ The `buildSrc/` directory is Gradle's way of sharing build logic across modules.
 `build.gradle` files without any import.
 
 The capstone's `buildSrc/` contains:
+
 - `ata-curriculum.java-conventions.gradle` — base Java config, JUnit setup, common dependencies
 - `ata-curriculum.snippets-conventions.gradle` — adds Checkstyle, JaCoCo, SpotBugs on top
 
 These convention plugins are applied by `ServiceLambda`, `ServiceLambdaModel`, `ServiceLambdaJavaClient`,
-`IntegrationTests`, and `Utilities` — but *not* by `Application`. Application has its own
+`IntegrationTests`, and `Utilities` — but _not_ by `Application`. Application has its own
 complete `build.gradle` because it is a Spring Boot project with different requirements.
 
 The bug we fixed in Module 01 (`xml.enabled` → `xml.required`) was in one of these convention

@@ -1,6 +1,7 @@
 # 16 — CI/CD Pipeline: GitHub Actions
 
-> **Phase 5 — Not yet implemented.**
+> **Status: Validated for CI checks; deployment is planned.** GitHub Actions runs backend
+> compilation/tests and frontend lint/format checks. The deployment example below is a target.
 
 ---
 
@@ -26,11 +27,11 @@ on:
     branches: [main]
 
 jobs:
-  test:       # Run unit tests and integration tests
-  build:      # Gradle build, produce artifacts
-  deploy-backend:   # Deploy Spring Boot to AWS (ECS or Elastic Beanstalk)
-  deploy-frontend:  # Build Vite, sync to S3, invalidate CloudFront
-  deploy-lambda:    # Package and deploy ServiceLambda (Phase 4+)
+  test: # Run unit tests and integration tests
+  build: # Gradle build, produce artifacts
+  deploy-backend: # Deploy Spring Boot to AWS (ECS or Elastic Beanstalk)
+  deploy-frontend: # Build Vite, sync to S3, invalidate CloudFront
+  deploy-lambda: # Package and deploy ServiceLambda (Phase 4+)
 ```
 
 Jobs run sequentially — deploy only runs if build passes, build only runs if tests pass.

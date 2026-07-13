@@ -2,18 +2,21 @@
 
 ## JWT Storage: localStorage vs HttpOnly Cookie
 
-### Current approach (Phase 3)
+### Current implemented approach
+
 The JWT is stored in `localStorage` (`gw_token`) and attached to every request
 via an Axios interceptor in `Frontend/src/api/client.js`.
 
 ### Known risk
+
 Any XSS vector — a malicious third-party dependency, a compromised npm package,
 or (once organizer-supplied campaign descriptions are rendered) unsanitized HTML —
 could read `localStorage` and exfiltrate the token. For a platform handling
 donations and Salesforce/Stripe integrations, this risk warrants a migration
-before going to production.
+before any public or production deployment.
 
-### Target approach (Phase 5 / production hardening)
+### Planned production-hardening approach
+
 Replace the client-side token with an **HttpOnly, Secure, SameSite=Strict** session
 cookie issued by Spring Security on successful login. Stateless JWT can be retained
 server-side inside a cookie container:
@@ -24,11 +27,12 @@ server-side inside a cookie container:
 4. If cross-domain API calls are required, use the short-lived access token + long-lived
    refresh-token-in-cookie pattern instead of storing the access token in `localStorage`.
 
-### Why localStorage was accepted for Phase 3
-- The backend auth endpoints are not yet hardened for production (Phase 5 scope).
+### Why localStorage is currently present
+
+- The backend auth endpoints are not hardened for production.
 - No organizer-supplied HTML is rendered via `dangerouslySetInnerHTML` yet — campaign
   descriptions are rendered as plain text.
-- The React dependency tree is small and fully audited at this stage.
-- Phase 3 is a local-dev milestone; no real user data is at risk.
+- The current repository milestone is for local portfolio development with synthetic data only.
 
-This decision must be revisited before any public deployment.
+This is an acknowledged production-hardening concern, not a recommendation to put sensitive
+data in `localStorage`. The decision must be revisited before any public deployment.
