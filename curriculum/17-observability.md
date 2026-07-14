@@ -38,11 +38,13 @@ Spring Boot Actuator auto-configures Micrometer and exposes metrics at `/actuato
 | --------------------------------------------- | ----------------------------------------------------------------------- |
 | `http.server.requests` (latency, by endpoint) | Slow endpoints catch DynamoDB or Salesforce latency issues              |
 | `cache.gets` / `cache.hits`                   | Low hit rate means cache TTL is too short or eviction is too aggressive |
-| `donation.created` (custom counter)           | Track payment volume; alert on sudden drops                             |
-| `donation.failed` (custom counter)            | Alert if failure rate spikes                                            |
+| `events.created` (example custom counter)     | Demonstrates a domain-event counter using the contract shown below      |
 | JVM memory (`jvm.memory.used`)                | Catch memory leaks before the instance crashes                          |
 
-Custom metrics are added with `MeterRegistry`:
+The example below uses the exact `events.created` counter name listed above. Donation-specific
+counters remain planned until a durable donation model exists.
+
+Custom metrics can be added with `MeterRegistry`:
 
 ```java
 @Service
