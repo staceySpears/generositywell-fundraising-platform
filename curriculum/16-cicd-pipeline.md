@@ -7,10 +7,10 @@
 
 ## Why this exists
 
-Right now, deploying GenerosityWell is a manual process: run the Gradle build locally, push to
-AWS manually, hope nothing breaks. A CI/CD pipeline automates this — every push to `main` runs
-the test suite, builds the artifacts, and deploys to AWS. If any step fails, the deploy stops
-and you get a notification.
+GenerosityWell currently validates backend and frontend changes with GitHub Actions CI; this
+repository does not establish an active AWS deployment. The target CD pipeline shown below would
+build deployable artifacts and release them to AWS only after required checks pass. Until that
+workflow and its credentials are implemented and validated, deployment remains planned.
 
 For a portfolio project, a working CI/CD pipeline signals that you understand how professional
 software ships. It is also a forcing function: if your tests are not passing, the pipeline catches
@@ -34,7 +34,9 @@ jobs:
   deploy-lambda: # Package and deploy ServiceLambda (Phase 4+)
 ```
 
-Jobs run sequentially — deploy only runs if build passes, build only runs if tests pass.
+GitHub Actions jobs run in parallel by default. A production version of this target workflow
+must add explicit `needs` dependencies so build waits for tests and deployment waits for build;
+the abbreviated example above does not yet define that ordering.
 
 ---
 
