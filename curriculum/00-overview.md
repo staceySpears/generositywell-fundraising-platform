@@ -6,8 +6,9 @@ Read this file first, every time you start a new session.
 
 ## What this curriculum is
 
-This is a guided refactor of a real Java codebase — a collaborative academic capstone — into a
-modern portfolio application. Every module covers one concept, walks through actual code from
+This is a guided refactor of a real Java codebase — originally created as a collaborative academic
+capstone in 2022 — into a modern portfolio application. Independent modernization began in March
+2026 and continues to the present. Every module covers one concept, walks through actual code from
 this repo, and ends with a hands-on task or exercise. The repository demonstrates engineering
 decisions; it does not claim production readiness or live nonprofit operation.
 
