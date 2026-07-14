@@ -11,10 +11,11 @@ This planned feature would connect a campaign's contributions to reviewed outcom
 rather than stopping at a fundraising progress total.
 
 Radical transparency means: every donor can see exactly what their contribution enabled.
-An organizer posts a structured `ImpactUpdate` — "With the funds raised, we served 450 meals
-and distributed 120 backpacks." That update is linked to the campaign, timestamped, and
-visible on the public campaign page. Donors who contributed during the campaign period see it
-in their donor dashboard.
+In an illustrative synthetic example, an organizer posts a structured `ImpactUpdate` —
+"With the funds raised, we served 450 meals and distributed 120 backpacks." Those numbers are
+demo data, not a claim about real outcomes. The update is linked to the campaign, timestamped,
+and visible on the public campaign page. Donors who contributed during the campaign period see
+it in their donor dashboard.
 
 A planned Agentforce assistant may draft these updates from approved context, but it cannot
 publish them. A person must review and edit the draft before approval, and only an approved update
