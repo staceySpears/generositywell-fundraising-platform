@@ -14,7 +14,7 @@ The capstone used this structure from the start. The modules are:
 | `Application`             | Spring Boot REST API — your controllers, services, DAOs, and config       |
 | `ServiceLambda`           | Legacy capstone Lambda module; not the current Spring Stripe webhook path |
 | `ServiceLambdaModel`      | Legacy shared DTOs retained during cleanup                                |
-| `ServiceLambdaJavaClient` | HTTP client the Spring app used to call the Lambda — removed in Phase 1   |
+| `ServiceLambdaJavaClient` | Legacy HTTP client retained in the repository; removed from `Application` dependencies in Phase 1 |
 | `Frontend`                | React + Vite SPA                                                          |
 | `IntegrationTests`        | Testcontainers-backed integration test suite                              |
 | `Utilities`               | Shared build helpers and Jacoco config                                    |
