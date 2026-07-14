@@ -23,8 +23,14 @@ server-side inside a cookie container:
 
 1. Spring Security issues the JWT inside a `Set-Cookie` header with the attributes above.
 2. The frontend never touches the token — the browser sends it automatically on same-origin requests.
-3. CSRF protection is required for all state-changing endpoints (Spring Security provides this via `CsrfTokenRepository`).
-4. If cross-domain API calls are required, use the short-lived access token + long-lived
+3. Enable CSRF protection in `SecurityConfig` with `CookieCsrfTokenRepository.withHttpOnlyFalse()`.
+   The authentication cookie remains HttpOnly; the separate `XSRF-TOKEN` cookie is intentionally
+   readable by the browser client so it can return the token.
+4. Expose a safe token bootstrap such as `GET /csrf` (or another documented request that causes
+   the repository to create `XSRF-TOKEN`). Configure Axios with `withCredentials: true`,
+   `xsrfCookieName: "XSRF-TOKEN"`, and `xsrfHeaderName: "X-XSRF-TOKEN"`; send that header on
+   every state-changing request.
+5. If cross-domain API calls are required, use the short-lived access token + long-lived
    refresh-token-in-cookie pattern instead of storing the access token in `localStorage`.
 
 ### Why localStorage is currently present
