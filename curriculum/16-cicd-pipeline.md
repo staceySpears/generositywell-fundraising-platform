@@ -1,15 +1,16 @@
 # 16 — CI/CD Pipeline: GitHub Actions
 
-> **Phase 5 — Not yet implemented.**
+> **Status: Validated for CI checks; deployment is planned.** GitHub Actions runs backend
+> compilation/tests and frontend lint/format checks. The deployment example below is a target.
 
 ---
 
 ## Why this exists
 
-Right now, deploying GenerosityWell is a manual process: run the Gradle build locally, push to
-AWS manually, hope nothing breaks. A CI/CD pipeline automates this — every push to `main` runs
-the test suite, builds the artifacts, and deploys to AWS. If any step fails, the deploy stops
-and you get a notification.
+GenerosityWell currently validates backend and frontend changes with GitHub Actions CI; this
+repository does not establish an active AWS deployment. The target CD pipeline shown below would
+build deployable artifacts and release them to AWS only after required checks pass. Until that
+workflow and its credentials are implemented and validated, deployment remains planned.
 
 For a portfolio project, a working CI/CD pipeline signals that you understand how professional
 software ships. It is also a forcing function: if your tests are not passing, the pipeline catches
@@ -26,14 +27,16 @@ on:
     branches: [main]
 
 jobs:
-  test:       # Run unit tests and integration tests
-  build:      # Gradle build, produce artifacts
-  deploy-backend:   # Deploy Spring Boot to AWS (ECS or Elastic Beanstalk)
-  deploy-frontend:  # Build Vite, sync to S3, invalidate CloudFront
-  deploy-lambda:    # Package and deploy ServiceLambda (Phase 4+)
+  test: # Run unit tests and integration tests
+  build: # Gradle build, produce artifacts
+  deploy-backend: # Deploy Spring Boot to AWS (ECS or Elastic Beanstalk)
+  deploy-frontend: # Build Vite, sync to S3, invalidate CloudFront
+  deploy-lambda: # Package and deploy ServiceLambda (Phase 4+)
 ```
 
-Jobs run sequentially — deploy only runs if build passes, build only runs if tests pass.
+GitHub Actions jobs run in parallel by default. A production version of this target workflow
+must add explicit `needs` dependencies so build waits for tests and deployment waits for build;
+the abbreviated example above does not yet define that ordering.
 
 ---
 

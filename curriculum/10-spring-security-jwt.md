@@ -1,49 +1,44 @@
 # 10 — Spring Security and JWT Auth
 
-> **Phase 3 — Not yet implemented.**
+> **Status: Implemented.** Production hardening remains planned; see [`SECURITY.md`](../SECURITY.md).
 
 ---
 
 ## Why this exists
 
-Currently any client can call any endpoint. There is no concept of who the caller is.
-Phase 3 adds authentication (who are you?) and authorization (what are you allowed to do?).
+GenerosityWell uses stateless authentication so protected operations can identify the caller
+without a server-side session. Login returns a signed JWT, and the frontend sends it in the
+`Authorization: Bearer` header. `JwtAuthenticationFilter` validates the token and populates the
+Spring Security context before controllers run.
 
-JWT (JSON Web Token) is the standard for stateless auth in REST APIs. When a user logs in,
-the server issues a signed JWT. Every subsequent request includes that token in the
-`Authorization` header. The server validates the signature and extracts the user's identity
-and roles — no session state, no database lookup per request.
+## What is implemented
 
-Spring Security is the standard Spring framework for auth. Its filter chain intercepts every
-HTTP request before it reaches your controllers.
+- `POST /users` registers an account; `POST /auth/login` returns a JWT and user ID.
+- Passwords are hashed with BCrypt.
+- Public reads include campaigns, events, and user profiles.
+- Campaign/event writes and payment-intent creation require authentication.
+- The JWT subject overrides client-supplied identity where applicable, including RSVP creation.
+- Campaign and event mutation services enforce owner/organizer checks.
+- Donation and RSVP history endpoints require authentication and are self-only.
+- The Stripe webhook is public at the JWT layer and authenticated by its Stripe signature.
 
----
+Explicit `ORGANIZER` and `DONOR` role-based access with `@PreAuthorize` is not implemented. Current
+authorization is identity-, ownership-, and endpoint-based; do not describe it as full RBAC.
 
-## The pieces you will build
+## Current security boundary
 
-**Endpoints:**
-- `POST /auth/register` — create a User account, return JWT
-- `POST /auth/login` — validate credentials, return JWT
+The frontend stores the JWT in `localStorage`, which exposes it to successful XSS. CSRF is disabled
+because the current API uses bearer tokens rather than authentication cookies. Before a public
+deployment, the project must revisit token storage, cookie and CSRF design, token lifetime/refresh,
+revocation, rate limiting, and end-to-end authorization tests.
 
-**Spring Security filter chain:**
-- `JwtAuthenticationFilter` — validates the token, populates the `SecurityContext`
-- Route-level rules: public routes (`GET /campaigns`, `GET /events`) vs. protected routes
-  (`POST /events`, `PUT /campaigns/:id`)
-
-**Role-based access:**
-- `ORGANIZER` — can create and manage campaigns and events
-- `DONOR` — can make donations and RSVP to events
-- Enforced with `@PreAuthorize("hasRole('ORGANIZER')")`
-
----
-
-## What to understand before you build this
+## What to understand
 
 1. What is the difference between authentication and authorization?
-2. A JWT has three parts: header, payload, and signature. What does the signature prevent?
-3. Why is JWT considered "stateless"? What does that mean for horizontal scaling?
-4. What is the `SecurityContext`, and how does the filter chain populate it?
-5. If a user's token is stolen, how do you invalidate it before it expires?
+2. What does a JWT signature protect, and what does it not protect?
+3. Why does extracting identity from the verified JWT matter more than trusting a request-body ID?
+4. Why would moving the JWT into an HttpOnly cookie require a CSRF strategy?
+5. How do ownership checks differ from role-based access control?
 
 ---
 

@@ -1,28 +1,29 @@
 # 12 — Stripe Integration: Payment Processing
 
-> **Phase 4 — Not yet implemented.**
+> **Status: Implemented foundation.** PaymentIntent creation, React PaymentElement confirmation,
+> and a signed Spring webhook path are present. Live deployment and end-to-end production
+> operation have not been validated.
 
 ---
 
 ## Why this exists
 
-Stripe is the industry standard for payment processing in modern web applications. It handles
-PCI compliance, fraud detection, and payment method support (cards, bank transfers, wallets)
-so you do not have to. You never see or store raw card numbers — Stripe's frontend SDK
-tokenizes the card on the client side, and you only ever work with a `PaymentIntent` object.
+Stripe provides payment processing, fraud tooling, and support for multiple payment methods.
+Using hosted Stripe Elements keeps raw card details out of the GenerosityWell application and
+reduces, but does not eliminate, the project's security and PCI-compliance responsibilities.
 
 ---
 
 ## The payment flow
 
-```
-1. Client calls POST /donations (amount, campaignId)
+```text
+1. Authenticated client calls POST /campaigns/{campaignId}/payment-intent
 2. Spring Boot creates a Stripe PaymentIntent
-3. Spring Boot returns the PaymentIntent client_secret to the client
-4. Client completes payment in the browser using Stripe.js + the client_secret
-5. Stripe sends a webhook event to POST /webhooks/stripe
-6. Lambda webhook handler processes payment.intent.succeeded
-7. Donation record written to DynamoDB; Salesforce synced
+3. Spring Boot returns the PaymentIntent client secret
+4. React PaymentElement confirms payment through Stripe.js
+5. Stripe sends a signed event to POST /webhooks/stripe
+6. The Spring webhook controller handles payment_intent.succeeded
+7. The campaign total is updated and the asynchronous Salesforce donation sync is invoked
 ```
 
 The Spring Boot API never processes the payment directly — it creates the intent and hands off
@@ -44,12 +45,13 @@ Donation
   └── createdAt: Instant
 ```
 
-A `Donation` is created with status `PENDING` when the PaymentIntent is created. The Stripe
-webhook handler updates it to `COMPLETED` or `FAILED` when Stripe confirms the outcome.
+This entity is a target design, not the current persistence model. The implemented webhook
+updates the campaign total and supporter history; it does not persist the `Donation` record
+described above. Webhook idempotency and a durable donation model remain hardening work.
 
 ---
 
-## What to understand before you build this
+## What to understand
 
 1. What is a Stripe PaymentIntent, and why does the client need the `client_secret` to complete
    the payment?

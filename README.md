@@ -1,307 +1,207 @@
 # GenerosityWell
 
-## Overview
+GenerosityWell is a portfolio fundraising platform for coordinating campaigns,
+donations, events, and volunteer participation. It is an actively developed
+application, not a production service or a record of real nonprofit activity.
 
-GenerosityWell is a **hyperlocal, community-first** fundraising platform designed to empower informal neighborhood groups, local schools, and grassroots nonprofits. Unlike traditional SaaS tools that treat giving time and giving money as separate workflows, GenerosityWell provides a unified hub for **volunteer and donor coordination**, allowing communities to track both financial and sweat-equity contributions in one place.
+## Project status
 
-At its core, the platform is built to eliminate friction and build trust through radical **campaign transparency**. By closing the loop with structured impact reporting, GenerosityWell ensures that every contributor sees exactly how their hours or dollars drove real-world change.
+This documentation uses four status labels:
+
+- **Implemented** — code or configuration is present in this repository.
+- **Validated** — the implementation also has repository-based automated or
+  reproducible verification. This does not mean production-validated.
+- **Planned** — the capability is a design or roadmap item, not an implemented feature.
+- **Optional/blocked by org capability** — the work depends on Salesforce editions,
+  licenses, or features that have not been confirmed in the portfolio org.
+
+| Area                                                                                             | Status                                 | Evidence and limits                                                                                                                         |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spring Boot API, DynamoDB access, caching, JWT auth, campaigns, events, RSVPs, and audit logging | **Implemented**                        | Source and unit tests are present; this is not a production-readiness claim.                                                                |
+| React 18/Vite application and dashboard flows                                                    | **Validated**                          | The frontend is built in `Frontend/`; CI runs lint and format checks, and the documented local check includes a production build.           |
+| Stripe PaymentIntent, PaymentElement, and signed Spring webhook flow                             | **Implemented**                        | Code is present in both application layers. Live deployment and end-to-end production operation have not been validated.                    |
+| One-way Salesforce REST synchronization                                                          | **Implemented**                        | The backend creates Campaign, Opportunity, and Contact records. Actual-org compatibility and end-to-end operation still require validation. |
+| Structured impact reporting                                                                      | **Planned**                            | No application model, workflow, or Salesforce metadata is committed.                                                                        |
+| Agentforce impact-update assistant                                                               | **Planned**                            | Any future draft must require human review before publication.                                                                              |
+| Salesforce Data Cloud                                                                            | **Optional/blocked by org capability** | No data streams or Data Cloud metadata are committed.                                                                                       |
+| Public AWS deployment                                                                            | **Planned**                            | The repository does not provide evidence of a currently operating S3/CloudFront or backend deployment.                                      |
 
 ## Project provenance
 
-GenerosityWell began as a Kenzie Academy/Southern New Hampshire University
-team capstone completed during the 2021–2022 software-engineering program. The
-original application was collaborative work; repository history and credited
-commits should be used to attribute individual contributions.
+GenerosityWell began as a Kenzie Academy/Southern New Hampshire University team
+capstone in 2022. The original application was collaborative work. Original
+contributors visible in the repository history include Stacey Spears, Robert
+Andris, Jordan Hanson, and Amed Espinosa; individual contributions should be
+attributed from commits rather than inferred from the current codebase.
 
-From March through May 2026, Stacey Spears independently refactored and
-modernized supported parts of the project, including backend, persistence,
-integration, testing, review, and modernization work reflected in the current
-repository history. The 2026 refactor does not imply sole authorship of the
-original capstone.
+The independent GenerosityWell modernization is dated **March 2026–Present**.
+Stacey Spears directed, reviewed, tested, integrated, and documented the later
+work supported by repository history. That work does not imply sole authorship
+of the original capstone. Development has been AI-assisted; credited work is
+based on human judgment and verifiable repository evidence, not generated-code
+volume.
 
-Development was AI-assisted. Credited work reflects human direction,
-requirements definition, review, correction, testing, integration, validation,
-and documentation — not generated-code volume.
+The project uses synthetic development data only. It does not claim nonprofit
+adoption, real donor volume, business outcomes, or production payment activity.
 
----
+## Implemented stack
+
+| Layer                    | Technology                                                                  |
+| ------------------------ | --------------------------------------------------------------------------- |
+| Backend                  | Java 21, Spring Boot 3.2.5, Gradle 8.7                                      |
+| API                      | Spring Web, Bean Validation, OpenAPI                                        |
+| Persistence              | Amazon DynamoDB, AWS SDK v2 Enhanced Client                                 |
+| Cache                    | Caffeine                                                                    |
+| Authentication           | Spring Security, JWT, BCrypt                                                |
+| Frontend                 | React 18, Vite, React Router 6, CSS Modules                                 |
+| Client data and forms    | Axios, TanStack Query, React Hook Form, Zod                                 |
+| UI                       | Radix UI primitives                                                         |
+| Payments                 | Stripe PaymentIntents, React Stripe PaymentElement, signed webhook handling |
+| CRM seam                 | Salesforce REST API using client-credentials OAuth                          |
+| Audit                    | Append-only DynamoDB audit log with entity and actor indexes                |
+| Observability foundation | Spring Actuator, Micrometer, Prometheus and CloudWatch registries           |
+| CI                       | GitHub Actions backend tests plus frontend lint and format checks           |
+
+Application persistence uses DynamoDB; the current application does not use JPA,
+Hibernate, or a relational database.
 
 ## Architecture
 
-### Current State
+### Current repository architecture
 
 ```mermaid
-flowchart TD
-    A[Frontend\nReact + Vite\nDeployed: AWS S3 + CloudFront] -->|REST / Axios| B[Application\nSpring Boot 3 · Java 21]
-
-    B -->|Caffeine\nin-memory cache| B
-    B -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
-
-    B -->|Metrics| E[Micrometer]
-    E --> F[Prometheus]
-    E --> G[AWS CloudWatch]
-
-    style A fill:#fef3c7,stroke:#d97706
-    style B fill:#dbeafe,stroke:#3b82f6
-    style D fill:#fef9c3,stroke:#eab308
-    style E fill:#f3e8ff,stroke:#a855f7
-    style F fill:#f3e8ff,stroke:#a855f7
-    style G fill:#f3e8ff,stroke:#a855f7
+flowchart LR
+    UI["React 18 + Vite"] -->|"Axios / REST"| API["Spring Boot 3.2.5<br/>Java 21"]
+    API --> CACHE["Caffeine cache"]
+    API --> DB[("DynamoDB")]
+    UI -->|"PaymentElement"| STRIPE["Stripe"]
+    API -->|"PaymentIntent API"| STRIPE
+    STRIPE -->|"signed webhook"| API
+    API -->|"one-way async REST<br/>when enabled"| SF["Salesforce<br/>Campaign / Opportunity / Contact"]
+    API --> OBS["Actuator + Micrometer"]
 ```
 
-### Target State (Phase 3 & 4)
+The diagram describes code in the repository, not a verified public deployment.
+The Spring webhook controller is the implemented Stripe webhook path; the legacy
+Lambda modules are not the current payment path.
+
+Representative evidence: [`StripeService`](Application/src/main/java/com/kenzie/appserver/service/StripeService.java),
+[`StripeWebhookController`](Application/src/main/java/com/kenzie/appserver/controller/StripeWebhookController.java),
+and [`StripePaymentForm`](Frontend/src/pages/CampaignDetailPage/StripePaymentForm.jsx).
+
+### Target Salesforce portfolio extension
 
 ```mermaid
-flowchart TD
-    A[Frontend\nReact + Vite\nDeployed: AWS S3 + CloudFront] -->|REST / Axios| B[Application\nSpring Boot 3 · Java 21]
-
-    B -->|Caffeine\nin-memory cache| B
-    B -->|AWS SDK v2\nEnhanced Client| D[(DynamoDB)]
-    B -->|REST API| SF[Salesforce\nSystem of Record]
-    SF -->|Data Cloud| DC[Salesforce Data Cloud\n360° Donor View]
-    DC -->|Agentforce| AI[AI Impact\nUpdate Agent]
-
-    ST[Stripe\nWebhook] -->|Event| L[AWS Lambda\nPayment Handler]
-    L --> D
-    L --> SF
-
-    B -->|Metrics| E[Micrometer]
-    E --> F[Prometheus]
-    E --> G[AWS CloudWatch]
-
-    style A fill:#fef3c7,stroke:#d97706
-    style B fill:#dbeafe,stroke:#3b82f6
-    style D fill:#fef9c3,stroke:#eab308
-    style SF fill:#dbeafe,stroke:#0070d2
-    style DC fill:#dbeafe,stroke:#0070d2
-    style AI fill:#dbeafe,stroke:#0070d2
-    style ST fill:#dcfce7,stroke:#22c55e
-    style L fill:#dcfce7,stroke:#22c55e
-    style E fill:#f3e8ff,stroke:#a855f7
-    style F fill:#f3e8ff,stroke:#a855f7
-    style G fill:#f3e8ff,stroke:#a855f7
+flowchart LR
+    APP["Implemented GenerosityWell app"] --> HARDEN["Planned<br/>observable, idempotent sync"]
+    HARDEN --> CRM["Planned version-controlled<br/>Salesforce configuration"]
+    CRM --> REVIEW["Planned Impact Update<br/>Draft → Review → Approved/Published"]
+    CRM -.->|"optional; org capability required"| DC["Data Cloud"]
+    CRM -.->|"planned; human-reviewed drafts only"| AF["Agentforce assistant"]
+    DC -.->|"optional context"| AF
+    AF -.->|"draft only"| REVIEW
 ```
 
----
+Data Cloud and Agentforce are not part of the current implementation. An AI
+assistant may eventually draft an impact update, but it must not publish an
+update, change donation records, or take financial action. A person must review
+and approve every draft before publication.
 
-## Purpose of the Platform & Architecture
+## Salesforce REST seam
 
-This project demonstrates how a modern, cloud-native application can seamlessly integrate with enterprise CRM systems to solve complex business problems. A community platform requires a lightweight, low-friction experience for its end users, but organizers still need robust, enterprise-grade tools to manage the back office. GenerosityWell bridges this gap by separating the public-facing transaction layer from the secure management layer:
+The disabled-by-default integration uses client-credentials OAuth and performs
+one-way, asynchronous writes:
 
-- **The Public Interface (Java / Spring Boot / AWS):** A robust, observable API layer and a modern React SPA handle the hyperlocal community experience — processing low-latency Stripe donations, capturing volunteer RSVPs, and displaying public impact reports.
-- **The System of Record (Salesforce Integration):** Rather than rebuilding generic CRM features from scratch, the platform syncs all transactional and user data directly into Salesforce via REST API. Salesforce serves as the single source of truth where organizers manage donor relationships and track campaign health.
-- **AI-Driven Transparency (Roadmap — Data Cloud & Agentforce):** Future phases will unify donation data in Salesforce Data Cloud to create a 360-degree view of community engagement. This foundation will enable a custom Agentforce agent to automatically draft and propose "Impact Updates" based on real-time campaign data, fulfilling the platform's core mission of transparency with zero administrative overhead.
+- local campaign → Salesforce `Campaign`;
+- recorded donation → Salesforce `Opportunity`;
+- registered user → Salesforce `Contact`.
 
----
+Implementation evidence: [`SalesforceTokenService`](Application/src/main/java/com/kenzie/appserver/salesforce/SalesforceTokenService.java),
+[`SalesforceClient`](Application/src/main/java/com/kenzie/appserver/salesforce/SalesforceClient.java),
+and [`SalesforceService`](Application/src/main/java/com/kenzie/appserver/salesforce/SalesforceService.java).
 
-## Project Structure
+The current mapping uses those concrete standard objects and fields; it is not
+evidence of NPSP or current Nonprofit Cloud compatibility. Configuration currently
+defaults to API `v59.0`, but the version and field mappings must be confirmed in
+the actual portfolio org before they are described as org-validated.
 
-| Module | Responsibility |
-|---|---|
-| `Application` | Core Spring Boot API. Handles routing, request validation, Caffeine caching, and observability. Connects directly to DynamoDB via AWS SDK v2 Enhanced Client. |
-| `ServiceLambda` | Reserved for Phase 4 — will house the Stripe payment webhook handler. Processes incoming Stripe events asynchronously and writes donation records to DynamoDB and Salesforce. |
-| `ServiceLambdaModel` | Shared domain models used across the Lambda boundary. Will be slimmed down to webhook-specific DTOs in Phase 4. |
-| `ServiceLambdaJavaClient` | Removed in Phase 1. The Spring Boot app connects directly to DynamoDB via the Enhanced Client — no Lambda proxy. Module retained in the repo tree but excluded from Application dependencies. |
-| `Frontend` | React + Vite SPA. Component-based UI consuming the Spring Boot REST API via Axios. |
-| `IntegrationTests` | Cross-module integration test suites backed by Testcontainers. |
-| `Utilities` | Shared helper functions and build configurations used across the project. |
+Failures are caught and logged so they do not fail the user-facing request. There
+is no durable retry queue, outbox, sync-status model, demonstrated idempotency key,
+or guaranteed-delivery claim. See
+[`curriculum/11-salesforce-integration.md`](curriculum/11-salesforce-integration.md)
+for the implementation boundary and hardening backlog.
 
----
+Credentials belong in environment or secret storage. Never commit Salesforce
+auth files, access tokens, org credentials, real constituent data, Stripe secrets,
+or payment data.
 
-## Frontend
+## Repository structure
 
-### Current State
+| Path                      | Responsibility                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Application`             | Spring Boot API, DynamoDB access, security, Stripe, Salesforce sync, caching, audit, and services |
+| `Frontend`                | React 18/Vite single-page application                                                             |
+| `IntegrationTests`        | Cross-module Testcontainers tests retained from the capstone and modernization                    |
+| `ServiceLambda`           | Legacy capstone Lambda implementation; not the current Stripe webhook path                        |
+| `ServiceLambdaModel`      | Legacy shared models retained during cleanup                                                      |
+| `ServiceLambdaJavaClient` | Legacy Lambda client retained in the repository                                                   |
+| `Utilities`               | Shared build and utility code                                                                     |
+| `curriculum`              | Modernization notes, current implementation boundaries, and planned exercises                     |
 
-The frontend is the original capstone build — Webpack 4, vanilla JS, and 8 separate HTML files. It functions but does not yet use React, component-based routing, or a modern build tool. The React + Vite migration is the first deliverable in Phase 3.
+## Local development and verification
 
-**Current stack:**
-
-| Tool | Version | Note |
-|---|---|---|
-| Webpack | 4 | Build tool; will be replaced by Vite |
-| Vanilla JS | — | No framework; pages are standalone HTML files |
-| Axios | 0.21.1 | HTTP client; will be updated |
-
-**Current dev server:**
-
-```bash
-cd Frontend
-npm install
-npm start        # webpack-dev-server on port 8080
-```
-
-**Current build:**
-
-```bash
-npm run build    # outputs to Frontend/dist/
-```
-
----
-
-### Planned Stack (Phase 3+)
-
-| Tool | Role | Phase |
-|---|---|---|
-| React 18 | Component-based UI | Phase 3 |
-| Vite | Fast dev server with HMR, optimized production builds | Phase 3 |
-| React Router v6 | Client-side routing (replaces 8 separate HTML files) | Phase 3 |
-| Axios (updated) | HTTP client with JWT interceptors | Phase 3 |
-| TanStack Query | Server-state management — caching, background refetch, stale-data invalidation for live donation totals | Phase 3 |
-| React Hook Form + Zod | Client-side validation mirroring Spring Boot Bean Validation; Zod schemas shared with the future React Native app | Phase 3 |
-| Radix UI | Headless, accessible UI primitives compatible with CSS Modules | Phase 3 |
-| CSS Modules | Scoped per-component styles | Phase 3 |
-| vite-plugin-pwa | Web app manifest + service worker; "Add to Home Screen" on any device | Phase 4 |
-
-### Planned Pages / Routes (Phase 3)
-
-| Route | Component | Access |
-|---|---|---|
-| `/` | `LandingPage` | Public |
-| `/login` | `LoginPage` | Public |
-| `/register` | `RegisterPage` | Public |
-| `/forgot-password` | `ForgotPasswordPage` | Public |
-| `/search` | `SearchPage` | Public |
-| `/campaigns` | `CampaignsPage` | Public |
-| `/campaigns/:id` | `CampaignDetailPage` | Public |
-| `/dashboard` | `DashboardPage` | Authenticated |
-| `/events` | `EventsPage` | Authenticated |
-| `/calendar` | `CalendarPage` | Authenticated |
-
----
-
-## Building & Running (Backend)
-
-### Local Development
-
-**Prerequisites:**
-- Java 21
-- Gradle 8.7+
-- Docker Desktop (or equivalent container runtime)
-
-**Step 1 — Start local DynamoDB**
+Prerequisites: Java 21, Node.js/npm, and Docker or another compatible container
+runtime for DynamoDB Local and integration tests.
 
 ```bash
+# Backend
 ./local-dynamodb.sh
-```
-
-**Step 2 — Build and run the Spring Boot application**
-
-```bash
 ./gradlew :Application:bootRunDev
+
+# Frontend, in another terminal
+cd Frontend
+npm ci
+npm run dev
 ```
 
-**Step 3 — Explore the API**
+When the backend is running locally, OpenAPI is available at
+`http://localhost:5001/swagger-ui.html`.
 
-The OpenAPI UI is auto-generated and available at: `http://localhost:5001/swagger-ui.html`
-
-> Note: the production profile runs on port 5000.
-
-### Building for Deployment
+Before a change is pushed, run the repository-required checks:
 
 ```bash
-./gradlew build
+./gradlew :Application:test
+cd Frontend
+npm run lint
+npm run build
 ```
 
----
+CI additionally runs backend compilation/tests and the frontend Prettier check.
+Integration tests can be run separately with `./gradlew :IntegrationTests:test`.
 
-## Testing
+## Security and production-hardening boundary
 
-**Unit Tests:** Isolated service logic validation using JUnit and Mockito.
+JWTs are currently stored in browser `localStorage`. This is an acknowledged XSS
+exposure and must be revisited before public deployment. See [`SECURITY.md`](SECURITY.md)
+for the current decision and the HttpOnly-cookie/CSRF hardening target.
 
-**Integration Tests:** A custom `ApplicationContextInitializer` (`DynamoDbInitializer`) uses Testcontainers to spin up an ephemeral `amazon/dynamodb-local` container, dynamically injecting the mapped port into the Spring context before test startup. This ensures reliable cross-module API testing without requiring a live AWS environment.
+Other planned hardening includes Salesforce integration tests and observable sync
+status, idempotency and bounded retry or a durable outbox, secret-managed org
+configuration, end-to-end payment tests, rate limiting, deployment verification,
+and operational dashboards.
 
-```bash
-./gradlew :IntegrationTests:test
-```
+## Portfolio roadmap
 
----
+| Workstream                                                                      | Status                                         |
+| ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Reconcile public documentation with repository evidence                         | **Implemented** in this documentation baseline |
+| Salesforce token/client/mapping/error-path tests                                | **Planned**                                    |
+| Observable sync state, external IDs, idempotency, and delivery strategy         | **Planned**                                    |
+| Salesforce DX metadata under `salesforce/` with an architecture decision record | **Planned**                                    |
+| Synthetic Salesforce sample-data setup and reset scripts                        | **Planned**                                    |
+| Impact Update approval Flow, permissions, reports, and dashboards               | **Planned**                                    |
+| Agentforce draft assistant                                                      | **Planned** and dependent on a capable org     |
+| Data Cloud-backed context                                                       | **Optional/blocked by org capability**         |
 
-## Roadmap
-
-| Phase | Focus | Status |
-|---|---|---|
-| **Phase 1 — Architecture Stabilization** | Spring Boot 3 / Java 21, AWS SDK v2, direct DynamoDB access, global exception handling | ✅ Complete |
-| **Phase 2 — Domain Rename & Model Cleanup** | Rename capstone entities to platform domain, eliminate duplicate models, add Bean Validation, proper date types | 🔄 In Progress |
-| **Phase 3 — Feature Completion** | React + Vite migration, campaign event lifecycle, JWT auth / Spring Security, volunteer RSVP, Salesforce integration, frontend auth flow | Planned |
-| **Phase 4 — Platform Enhancements** | Productionize the existing Stripe PaymentIntent, PaymentElement, and Spring webhook foundation; add the planned Lambda webhook architecture, impact reporting, donor dashboard, PWA, Salesforce Data Cloud + Agentforce | 🔄 Partial / Planned |
-| **Phase 5 — Production Hardening** | CI/CD pipeline, S3 + CloudFront deploy, E2E tests, rate limiting, API Gateway | Planned |
-| **Phase 6 — Mobile** | React Native + Expo donor/volunteer app; Salesforce Lightning Web Components for organizer mobile | Planned |
-
-### Phase 1 — Architecture Stabilization ✅
-
-- Spring Boot 3.2.5, Java 21, Gradle 8.7 upgrade
-- AWS SDK v2 migration across all modules
-- Direct DynamoDB access via Enhanced Client (removed Lambda proxy layer)
-- Multi-module Gradle structure established
-- Docker-based local DynamoDB dev infrastructure
-- Global exception handling with `@RestControllerAdvice`
-
-> **Frontend note:** The frontend is currently the original capstone build (Webpack 4, vanilla JS, 8 separate HTML files). The React + Vite migration is the first item in Phase 3.
-
-### Phase 2 — Domain Rename & Model Cleanup 🔄
-
-- Rename `Customer` → `Attendee`; clarify `User` / `Organizer` / `Donor` roles
-- Eliminate duplicate models between `Application` and `ServiceLambdaModel`
-- Replace broken Spring Data DynamoDB repos with Enhanced Client DAOs
-- Add `@Valid` + `@NotBlank` / `@NotNull` to all request DTOs
-- Migrate `date` fields from `String` to `LocalDate`
-- Migrate `CacheStore` from Guava to Caffeine; unify to a single typed cache
-
-### Phase 3 — Feature Completion
-
-**Frontend migration (prerequisite for all frontend feature work):**
-- Replace Webpack 4 + vanilla JS with React 18 + Vite
-- Migrate 8 standalone HTML pages to React components with React Router v6
-- Wire Axios with JWT interceptors for authenticated routes
-- Add TanStack Query for server-state management
-- Add React Hook Form + Zod for client-side form validation
-- Add Radix UI headless component primitives
-
-**Backend feature work (largely complete — see Phase 1/2 PRs):**
-- ✅ `Campaign` entity with goal, timeline, and status lifecycle (`ACTIVE → FUNDED → CLOSED`)
-- ✅ JWT auth / Spring Security — register, login, stateless token validation
-- ✅ Salesforce REST API integration — sync users, campaigns, and donations
-- `FundraisingEvent` linked to a Campaign
-- Volunteer RSVP flow — attendees can commit time, not just money
-- Role-based access control (`ORGANIZER`, `DONOR`)
-
-### Phase 4 — Platform Enhancements
-
-The repository already contains Stripe PaymentIntent service/API code, a React
-PaymentElement flow, Stripe configuration, and a Spring webhook controller.
-Those components are implementation foundations, not evidence of a deployed or
-commercially validated payment workflow. The separate AWS Lambda webhook
-architecture remains planned.
-
-- ✅ Stripe PaymentIntent service/API implementation
-- ✅ React PaymentElement integration
-- ✅ Spring Stripe webhook controller
-- AWS Lambda Stripe webhook handler — planned asynchronous payment-event processing
-- Structured impact reporting — organizers post updates; donors see their contribution's effect
-- Donor dashboard — giving history, volunteer hours, campaigns followed
-- **Progressive Web App (PWA)** — `vite-plugin-pwa` adds a web app manifest and service worker to the existing React/Vite SPA; donors and volunteers can "Add to Home Screen" on any device without an app store; eliminates friction for one-time contributors
-- Salesforce Data Cloud unification — 360° view of community engagement per organizer
-- Agentforce agent — auto-drafts Impact Update posts from real-time campaign data
-
-### Phase 5 — Production Hardening
-
-- ✅ GitHub Actions CI — build and unit tests run on every PR and push to main
-- AWS S3 + CloudFront for frontend hosting
-- API Gateway — rate limiting, CORS, auth header validation
-- Playwright or Cypress E2E tests covering the critical donor flow
-- CloudWatch dashboards wired via Micrometer for key platform metrics
-
-### Phase 6 — Mobile
-
-Two tracks targeting distinct user groups — built to share maximum logic with the existing web frontend.
-
-**Donor & Volunteer App (React Native + Expo)**
-- Expo abstracts iOS (Xcode) and Android (Android Studio) build complexity
-- Reuses the Zod validation schemas, Axios API client, and JWT auth flow from the web frontend
-- TanStack Query for server-state management is identical API surface on React Native
-- Core flows: browse campaigns, donate (Stripe), volunteer RSVP, push notifications for campaign milestones
-
-**Organizer App (Salesforce Lightning Web Components)**
-- Organizers already live in Salesforce — no separate app download required
-- Custom LWCs expose campaign health, donation velocity, and volunteer pipeline directly in the Salesforce Mobile App
-- As Data Cloud and Agentforce integrations land (Phase 4), LWC surfaces the AI-drafted Impact Updates for organizer review and one-tap publish
-- Zero additional deployment infrastructure: LWCs deploy as part of the Salesforce org
+Portfolio claims should link to public code, metadata, tests, diagrams, or synthetic
+demo evidence. Seeded or synthetic results must always be labeled as demo/test data.

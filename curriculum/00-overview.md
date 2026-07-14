@@ -6,9 +6,11 @@ Read this file first, every time you start a new session.
 
 ## What this curriculum is
 
-This is a guided refactor of a real Java codebase — your own academic capstone — into a
-production-quality, cloud-native application. Every module covers one concept, walks through
-actual code from this repo, and ends with a hands-on task or exercise.
+This is a guided refactor of a real Java codebase — originally created as a collaborative academic
+capstone in 2022 — into a modern portfolio application. Independent modernization began in March
+2026 and continues to the present. Every module covers one concept, walks through actual code from
+this repo, and ends with a hands-on task or exercise. The repository demonstrates engineering
+decisions; it does not claim production readiness or live nonprofit operation.
 
 The goal is not just to have a working app at the end. The goal is that you can sit in a
 technical interview, point at any file in this repo, and explain exactly why it is written
@@ -21,17 +23,18 @@ That is what separates a portfolio project from homework.
 ## What you are building
 
 **GenerosityWell** is a hyperlocal, community-first fundraising platform for neighborhood groups,
-local schools, and grassroots nonprofits. It has three differentiating features that no existing
-SaaS tool handles in one place:
+local schools, and grassroots nonprofits. Its implemented and planned product themes are:
 
 1. **Unified volunteer + donor coordination** — contributors can give time or money through the same platform
-2. **Campaign transparency** — organizers post impact updates; donors see exactly what their contribution did
-3. **Enterprise back-office via Salesforce** — rather than rebuilding a CRM, the platform syncs into Salesforce so organizers get a 360° view of community engagement; Agentforce drafts impact updates automatically
+2. **Campaign transparency (planned)** — reviewed impact updates would connect contributions to outcomes
+3. **Salesforce portfolio extension** — an implemented REST seam is the starting point for planned, source-controlled CRM configuration and reporting
 
-The technical architecture reflects the product split:
-- **Public interface** — Spring Boot 3 / Java 21 REST API + React + Vite SPA, hosted on AWS
-- **System of record** — Salesforce, synced via REST API
-- **AI transparency layer** — Salesforce Data Cloud + Agentforce (Phase 4)
+The current technical boundary is:
+
+- **Implemented application** — Spring Boot 3/Java 21 REST API and React/Vite SPA; no public deployment is asserted
+- **Implemented CRM seam** — disabled-by-default, one-way asynchronous REST writes to Salesforce Campaign, Opportunity, and Contact
+- **Planned portfolio metadata** — Salesforce configuration, approval Flow, reports, dashboards, and synthetic demo scripts
+- **Planned/optional AI layer** — Agentforce drafts with mandatory human review; Data Cloud only if org capability is verified
 
 ---
 
@@ -62,27 +65,35 @@ familiar. The code is the easy part. The reasoning is what gets tested in interv
 
 ---
 
+## Status vocabulary
+
+- **Implemented** — code or configuration is present in the repository.
+- **Validated** — the implementation also has automated or reproducible evidence; this is
+  not the same as production validation.
+- **Planned** — the item is not implemented.
+- **Optional/blocked by org capability** — Salesforce licenses or features are unconfirmed.
+
 ## The full arc
 
-| Module | Topic | Phase | Status |
-|---|---|---|---|
-| 01 | Spring Boot 3 upgrade, Java 21, Gradle 8 | 1 | ✅ Complete |
-| 02 | Gradle multi-module builds | 1 | ✅ Complete |
-| 03 | AWS SDK v2 migration | 1 | ✅ Complete |
-| 04 | Removing the Lambda proxy | 1 | ✅ Complete |
-| 05 | Global exception handling | 1 | ✅ Complete |
-| 06 | Domain modeling and naming | 2 | 🔄 In Progress |
-| 07 | Caffeine cache | 2 | 🔄 In Progress |
-| 08 | Bean validation | 2 | 🔄 In Progress |
-| 09 | Campaign entity and status lifecycle | 3 | Planned |
-| 10 | Spring Security and JWT auth | 3 | Planned |
-| 11 | Salesforce integration | 3 | Planned |
-| 12 | Stripe integration | 4 | Planned |
-| 13 | Lambda webhooks (intentional) | 4 | Planned |
-| 14 | Impact reporting | 4 | Planned |
-| 15 | Agentforce and Data Cloud | 4 | Planned |
-| 16 | CI/CD pipeline | 5 | Planned |
-| 17 | Observability | 5 | Planned |
+| Module | Topic                                            | Phase | Status                                                    |
+| ------ | ------------------------------------------------ | ----- | --------------------------------------------------------- |
+| 01     | Spring Boot 3 upgrade, Java 21, Gradle 8         | 1     | **Implemented**                                           |
+| 02     | Gradle multi-module builds                       | 1     | **Implemented**                                           |
+| 03     | AWS SDK v2 migration                             | 1     | **Implemented**                                           |
+| 04     | Removing the Lambda proxy                        | 1     | **Implemented**                                           |
+| 05     | Global exception handling                        | 1     | **Implemented**                                           |
+| 06     | Domain modeling and naming                       | 2     | **Implemented** (legacy modules remain)                   |
+| 07     | Caffeine cache                                   | 2     | **Implemented**                                           |
+| 08     | Bean validation                                  | 2     | **Implemented**                                           |
+| 09     | Campaign entity and status lifecycle             | 3     | **Implemented**                                           |
+| 10     | Spring Security and JWT auth                     | 3     | **Implemented**; production hardening planned             |
+| 11     | Salesforce REST seam                             | 3     | **Implemented**; actual-org validation planned            |
+| 12     | Stripe integration                               | 4     | **Implemented**; production operation not validated       |
+| 13     | Lambda webhooks (intentional)                    | 4     | **Planned**                                               |
+| 14     | Impact reporting                                 | 4     | **Planned**                                               |
+| 15     | Agentforce and Data Cloud                        | 4     | **Planned** / **Optional/blocked by org capability**      |
+| 16     | CI checks and future deployment pipeline         | 5     | **Validated** for CI checks; deployment planned           |
+| 17     | Observability dependencies and future operations | 5     | **Implemented** foundation; deployment validation planned |
 
 ---
 

@@ -7,7 +7,7 @@ These names tell you nothing about the platform's purpose. A fundraising platfor
 its contributors "Customers" immediately signals that no one thought about what the domain
 actually represents.
 
-Domain modeling is the practice of naming and structuring your code around the *business concepts*
+Domain modeling is the practice of naming and structuring your code around the _business concepts_
 your software represents — not around generic CRUD patterns or technical roles. When someone
 reads your code, they should immediately understand what the software does without reading
 documentation.
@@ -25,12 +25,11 @@ fundraising event is an **Attendee**. This name also maps cleanly to the volunte
 an attendee can be a financial donor, a volunteer, or both. The word "Customer" cannot carry
 that meaning without confusion.
 
-### `User` stays `User` for now — but splits later
+### `User` stays `User`
 
-`User` is the platform account — the entity that logs in. But in this domain, a user has a *role*:
-they are either an `Organizer` (creates and manages campaigns and events) or a `Donor` (gives
-money or time). These will become explicit in Phase 3 when we add JWT auth and role-based access.
-For now, the `User` class stays but we document the intent.
+`User` is the platform account — the entity that logs in. JWT authentication is implemented.
+Current authorization derives identity from the JWT and applies ownership and self-only checks;
+explicit `Organizer` and `Donor` application roles are not implemented.
 
 ### A new entity: `Campaign`
 
@@ -38,7 +37,8 @@ The capstone had `Event` as the top-level concept. A fundraising platform needs 
 above it: a Campaign is a fundraising initiative with a goal and a timeline; a `FundraisingEvent`
 is a discrete gathering that belongs to a Campaign. One campaign can have multiple events.
 
-This relationship does not exist in the codebase yet. It is the first task of Phase 3.
+This relationship is implemented: a `FundraisingEventRecord` carries a `campaignId`, and campaign
+and event services enforce their respective owner/organizer rules.
 
 ---
 
@@ -57,12 +57,12 @@ Record (DAO layer)  → maps to DynamoDB; carries persistence annotations
 Response DTO        → shapes what the client receives
 ```
 
-| Layer | Class | Lives in | Rule |
-|---|---|---|---|
-| Request DTO | `CreateEventRequest` | `controller/model/` | Receives client JSON; has `@NotBlank` validation |
-| Service model | `Event` | `service/model/` | Pure domain object; no Spring, no DynamoDB annotations |
-| Record | `EventRecord` | `repositories/model/` | Has `@DynamoDbBean`, `@DynamoDbPartitionKey` |
-| Response DTO | `EventResponse` | `controller/model/` | Shapes what the API returns; hides internal fields |
+| Layer         | Class                | Lives in              | Rule                                                   |
+| ------------- | -------------------- | --------------------- | ------------------------------------------------------ |
+| Request DTO   | `CreateEventRequest` | `controller/model/`   | Receives client JSON; has `@NotBlank` validation       |
+| Service model | `Event`              | `service/model/`      | Pure domain object; no Spring, no DynamoDB annotations |
+| Record        | `EventRecord`        | `repositories/model/` | Has `@DynamoDbBean`, `@DynamoDbPartitionKey`           |
+| Response DTO  | `EventResponse`      | `controller/model/`   | Shapes what the API returns; hides internal fields     |
 
 **Why not just use one class for everything?** Because each layer has different requirements
 that conflict. A record needs DynamoDB annotations. A request DTO needs validation annotations.
@@ -74,11 +74,11 @@ breaks all the others.
 
 ## What is being renamed in Phase 2
 
-| Old name | New name | File(s) affected |
-|---|---|---|
-| `Customer` | `Attendee` | `Customer.java`, `CustomerTypeConverter.java`, `EventRecord`, `CreateEventRequest`, `EventUpdateRequest`, `EventResponse` |
-| `EventUserRepository` | (deleted) | Replaced by `UserDao` ✅ done |
-| `ExampleRecord`, `Example`, `ExampleData` | (deleted) | ✅ done |
+| Old name                                  | New name   | File(s) affected                                                                                                          |
+| ----------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `Customer`                                | `Attendee` | `Customer.java`, `CustomerTypeConverter.java`, `EventRecord`, `CreateEventRequest`, `EventUpdateRequest`, `EventResponse` |
+| `EventUserRepository`                     | (deleted)  | Replaced by `UserDao` ✅ done                                                                                             |
+| `ExampleRecord`, `Example`, `ExampleData` | (deleted)  | ✅ done                                                                                                                   |
 
 The `Customer` → `Attendee` rename touches many files because `Customer` is embedded in the
 `EventRecord` as a `List<Customer>` and in every request/response DTO. This is a good exercise
@@ -91,7 +91,7 @@ in tracing a type change through a layered architecture.
 1. Why does the `Event` service model class exist separately from `EventRecord`? What would
    break if you removed it and used `EventRecord` directly in `EventService`?
 2. The response DTO (`EventResponse`) does not have to match the record (`EventRecord`) field
-   for field. What is an example of a field you might store in the record but *not* expose in
+   for field. What is an example of a field you might store in the record but _not_ expose in
    the response?
 3. Why is "Attendee" a better domain name than "Customer" for this platform?
 4. What is the relationship between `Campaign` and `FundraisingEvent` that the capstone's

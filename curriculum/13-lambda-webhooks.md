@@ -1,21 +1,22 @@
 # 13 — Lambda Webhooks: Bringing Lambda Back Intentionally
 
-> **Phase 4 — Not yet implemented.**
+> **Status: Planned.** The current webhook is handled by Spring Boot; Lambda is not the active
+> Stripe webhook architecture.
 
 ---
 
 ## Why this exists
 
-In Phase 1, we removed the Lambda because it was a synchronous DynamoDB proxy — the wrong
-tool for the job. In Phase 4, Lambda comes back for Stripe webhook processing — the right
-tool for the job. Understanding the difference is the point of this module.
+In Phase 1, the modernization removed a Lambda that acted as a synchronous DynamoDB proxy.
+The current Stripe webhook is implemented in Spring Boot. Moving it to Lambda is only a target
+architecture and should happen only if its operational tradeoffs are justified.
 
 The capstone Lambda: synchronous, blocking, added latency, no business logic.
 The Stripe webhook Lambda: asynchronous, event-driven, isolated, stateless.
 
 ---
 
-## Why Lambda is correct for webhooks
+## Target Lambda pattern to evaluate
 
 Stripe sends a `POST` to your webhook endpoint when a payment event occurs. You must respond
 with `200 OK` within a few seconds or Stripe retries. The actual processing — updating the
@@ -28,16 +29,16 @@ The pattern:
 Stripe → POST /webhooks/stripe (Lambda) → 200 OK immediately
                                         → write to DynamoDB (async)
                                         → call Salesforce API (async)
-                                        → update Campaign.raisedAmountCents
+                                        → update campaign total
 ```
 
-Lambda handles each webhook event as a separate invocation. If processing fails, Lambda retries.
-Each invocation is stateless — no shared memory, no risk of one payment affecting another.
+Lambda could handle each webhook event as a separate stateless invocation, but retry behavior
+depends on the chosen ingress and invocation model. A public synchronous Lambda endpoint does not
+by itself provide durable asynchronous delivery, idempotency, or a dead-letter queue.
 
-The `ServiceLambda` module, which was dormant after Phase 1, becomes this webhook handler.
-It stays as a separate module in the Gradle build for the same reason it was originally
-separate: it deploys independently, scales independently, and fails independently of the
-Spring Boot app.
+The legacy `ServiceLambda` module is not currently this webhook handler. Reusing or replacing it
+would require a separate implementation PR, deployment configuration, idempotency tests, failure
+handling, and evidence that it deploys independently.
 
 ---
 
