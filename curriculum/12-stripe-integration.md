@@ -16,7 +16,7 @@ reduces, but does not eliminate, the project's security and PCI-compliance respo
 
 ## The payment flow
 
-```
+```text
 1. Authenticated client calls POST /campaigns/{campaignId}/payment-intent
 2. Spring Boot creates a Stripe PaymentIntent
 3. Spring Boot returns the PaymentIntent client secret
